@@ -245,6 +245,8 @@ int main(int argc, char *argv[])
 	printf("# height               %u \n", bmp.height);
 	printf("# size			%u\n", bmp.buffer_size);
 	printf("# bpp			%d\n", bmp.bpp);
+	printf("# Encoding		%d\n", bmp.encoding);
+	
 	printf("%u %u 256\n", bmp.width, bmp.height);
 
 	{
