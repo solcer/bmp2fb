@@ -262,7 +262,7 @@ int main(int argc, char *argv[])
                         	location = col+(row*finfo.line_length);
                          	*((uint8_t*)(fbp + location)) = pixel;
 				//printf("pixel no:%d,location:%d\n",pixel,location);
-				//nanosleep((struct timespec[]){{0, 50000000}}, NULL);
+ 				//nanosleep((struct timespec[]){{0, 50000000}}, NULL);
 
 				// pixel = * (image+ (row * bmp.width + col+1));
                                 //location = col+(row*finfo.line_length)+1; 
