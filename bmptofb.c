@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
 
     	int x = 0, y = 0, i = 0;
 
-    	uint8_t pixel = 0;
+    	unsigned short int pixel = 0;
 
     	bool stripe = true;
 
@@ -251,7 +251,7 @@ int main(int argc, char *argv[])
 
 	{
 		uint16_t row, col,pixelCounter=0;
-		uint8_t *image;
+		unsigned short int *image;
 		image = (unsigned short int*) bmp.bitmap;
 		// *(uint8_t*)fbp= (uint8_t *) bmp.bitmap;
 		
