@@ -262,7 +262,7 @@ int main(int argc, char *argv[])
 				//pixel=z;
 				
 				//pixel = * (image+ (row * bmp.width + col));
-                        	location = col+(row*bmp.width);
+                        	location = col+(row*finfo.line_length);
                          	pixel = image[z];
 				*((unsigned short int*)(fbp + location)) = pixel;
 				//pixel = image[z+1];
