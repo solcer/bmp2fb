@@ -260,11 +260,11 @@ int main(int argc, char *argv[])
 				//pixel=z;
 				
 				//pixel = * (image+ (row * bmp.width + col));
-                        	//location = col+(row*finfo.line_length);
+                        	location = col+(row*finfo.line_length);
                          	pixel = image[z];
-				*((uint8_t*)(fbp + col)) = pixel;
+				*((uint8_t*)(fbp + location)) = pixel;
 				pixel = image[z+1];
-				*((uint8_t*)(fbp + col+1)) = pixel;
+				*((uint8_t*)(fbp + location)) = pixel;
 				//printf("pixel no:%d,location:%d\n",pixel,location);
  				//nanosleep((struct timespec[]){{0, 50000000}}, NULL);
 
