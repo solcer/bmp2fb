@@ -248,11 +248,11 @@ int main(int argc, char *argv[])
 	printf("%u %u 256\n", bmp.width, bmp.height);
 
 	{
-		uint16_t row, col;
+		uint16_t row, col,pixelCounter=0;
 		uint8_t *image;
 		image = (uint8_t *) bmp.bitmap;
 		for (row = 0; row != bmp.height; row++) {
-			for (col = 0; col != bmp.width; col++) {
+			for (col = 0; col != bmp.buffer_size/bmp.height; col++) {
 				size_t z = (row * bmp.width + col) * BYTES_PER_PIXEL;
 				/*printf("%u %u %u** ",	image[z],
 							image[z + 1],
@@ -261,13 +261,13 @@ int main(int argc, char *argv[])
 				pixel = * (image+ (row * bmp.width + col));
                         	location = col+(row*finfo.line_length);
                          	*((uint8_t*)(fbp + location)) = pixel;
-				printf("pixel no:%d,location:%d\n",pixel,location);
+				//printf("pixel no:%d,location:%d\n",pixel,location);
 				//nanosleep((struct timespec[]){{0, 50000000}}, NULL);
 
-				 pixel = * (image+ (row * bmp.width + col+1));
-                                location = col+(row*finfo.line_length)+1; 
-                                *((uint8_t*)(fbp + location)) = pixel; 
-				printf("pixel no:%d,location:%d\n",pixel,location);
+				// pixel = * (image+ (row * bmp.width + col+1));
+                                //location = col+(row*finfo.line_length)+1; 
+                                //*((uint8_t*)(fbp + location)) = pixel; 
+				//printf("pixel no:%d,location:%d\n",pixel,location);
 
 
 				//printf("Location: %d, pixel: %d\r",location, pixel);
