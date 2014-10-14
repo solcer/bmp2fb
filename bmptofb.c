@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
 
     	int x = 0, y = 0, i = 0;
 
-    	unsigned short int pixel = 0;
+    	uint8_t pixel = 0;
 
     	bool stripe = true;
 
@@ -251,8 +251,8 @@ int main(int argc, char *argv[])
 
 	{
 		uint16_t row, col,pixelCounter=0;
-		unsigned short int *image;
-		image = (unsigned short int*) bmp.bitmap;
+		uint8_t *image;
+		image = (uint8_t *) bmp.bitmap;
 		// *(uint8_t*)fbp= (uint8_t *) bmp.bitmap;
 		
 		for (row = 0; row != bmp.height; row++) {
@@ -264,9 +264,9 @@ int main(int argc, char *argv[])
 				//pixel = * (image+ (row * bmp.width + col));
                         	location = col+(row*finfo.line_length);
                          	pixel = image[z];
-				*((unsigned short int*)(fbp + location)) = pixel;
-				//pixel = image[z+1];
-				//*((unsigned short int*)(fbp + location)) = pixel;
+				*((uint8_t*)(fbp + location)) = pixel;
+				pixel = image[z+1];
+				*((uint8_t*)(fbp + location)) = pixel;
 				//printf("pixel no:%d,location:%d\n",pixel,location);
  				//nanosleep((struct timespec[]){{0, 50000000}}, NULL);
 
