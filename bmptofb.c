@@ -251,8 +251,8 @@ int main(int argc, char *argv[])
 		uint16_t row, col,pixelCounter=0;
 		uint8_t *image;
 		image = (uint8_t *) bmp.bitmap;
-		*(uint8_t*)fbp= (uint8_t *) bmp.bitmap;
-		/*
+		//*(uint8_t*)fbp= (uint8_t *) bmp.bitmap;
+		
 		for (row = 0; row != bmp.height; row++) {
 			for (col = 0; col != bmp.buffer_size/bmp.height; col++) {
 				size_t z = (row * bmp.width + col) * BYTES_PER_PIXEL;
@@ -273,7 +273,7 @@ int main(int argc, char *argv[])
 				//printf("Location: %d, pixel: %d\r",location, pixel);
 			}
 			//printf("\n");
-		}*/
+		}
 	}
 
 cleanup:
