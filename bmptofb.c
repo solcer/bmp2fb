@@ -294,7 +294,7 @@ int main(int argc, char *argv[])
 				    //r<<11 | g << 5 | b;
 				    *((uint16_t*)(fbp + location)) = image[z]<<8|image[z+1]<<3|image[z+2]>>3;
 				    //*((uint8_t*)(fbp + location+1)) =image[z+1];
-			    }
+			    } 
 			    //printf("\n");
 		    }
 		      break;
