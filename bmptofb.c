@@ -298,7 +298,7 @@ int main(int argc, char *argv[])
 			      } 
 			      //printf("\n");
 		      }
-		    }else if(bmp.bpp==24)
+		    }else if(bmp.bpp==24) 
 		    {
 		      for (row = 0; row != bmp.height; row++) {
 			      for (col = 0; col != bmp.width; col++) {
