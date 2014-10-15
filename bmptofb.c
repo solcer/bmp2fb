@@ -286,7 +286,7 @@ int main(int argc, char *argv[])
 		    for (row = 0; row != bmp.height; row++) {
 			    for (col = 0; col != bmp.width; col++) {
 				    size_t z = (row * bmp.width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
-				    //printf("byte %d %d %d**  \n",	image[z],image[z + 1],image[z + 2]);
+				    printf("byte %d %d %d**  \n",	image[z],image[z + 1],image[z + 2]);
 				    //printf("integer: %d\n",(uint16_t) image[z] | image[z+1]<< 8 | image[z+2]<<16);
 				    //pixel = * (image+ (row * bmp.width + col));
 				    location = col*2+(row*finfo.line_length);			//her bir pixel 2 byte olduğu için col*2 yaptım.
