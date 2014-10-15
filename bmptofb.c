@@ -264,7 +264,7 @@ int main(int argc, char *argv[])
 				//pixel = * (image+ (row * bmp.width + col));
                         	location = col+(row*finfo.line_length);
                          	//pixel = image[z];
-				*((uint16_t*)(fbp + location)) =(uint16_t) image[z] | image[z+1]<< 8 | image[z+2]<<16;
+				*((unsigned short int*)(fbp + location)) =  = image[z]<<16 | image[z+1]<< 8 | image[z+2];
 				//pixel = image[z+1];
 				//*((uint8_t*)(fbp + location)) = pixel;
 				//printf("pixel no:%d,location:%d\n",pixel,location);
