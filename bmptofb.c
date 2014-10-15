@@ -258,7 +258,7 @@ int main(int argc, char *argv[])
 		for (row = 0; row != bmp.height; row++) {
 			for (col = 0; col != bmp.width; col++) {
 				size_t z = (row * bmp.width + col) * BYTES_PER_PIXEL;
-				printf("byte %d %d** \n",	image[z],image[z + 1]);
+				printf("byte %d %d**  \n",	image[z],image[z + 1]);
 				//pixel=z;
 				printf("integer: %d\n",(uint16_t) image[z]);
 				//pixel = * (image+ (row * bmp.width + col));
