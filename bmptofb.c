@@ -292,7 +292,7 @@ int main(int argc, char *argv[])
 				    location = col*2+(row*finfo.line_length);			//her bir pixel 2 byte olduğu için col*2 yaptım.
 				    // *((unsigned short int*)(fbp + location)) = 255;//image[z]<<0 | image[z+1]<< 8 | image[z+2]<<16;
 				    //r<<11 | g << 5 | b;
-				    *((uint16_t*)(fbp + location)) = image[z]<<11|image[z+1]<<5|image[z+2];
+				    *((uint16_t*)(fbp + location)) = image[z]<<8|image[z+1]<<3|image[z+2]>>3;
 				    //*((uint8_t*)(fbp + location+1)) =image[z+1];
 			    }
 			    //printf("\n");
