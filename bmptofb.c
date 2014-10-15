@@ -251,8 +251,8 @@ int main(int argc, char *argv[])
 
 	{
 		uint16_t row, col,pixelCounter=0;
-		uint16_t *image;
-		image = (uint16_t *) bmp.bitmap;
+		uint8_t *image;
+		image = (uint8_t *) bmp.bitmap;
 		// *(uint8_t*)fbp= (uint8_t *) bmp.bitmap;
 		
 		for (row = 0; row != bmp.height; row++) {
@@ -264,7 +264,7 @@ int main(int argc, char *argv[])
 				//pixel = * (image+ (row * bmp.width + col));
                         	location = col+(row*finfo.line_length);
                          	//pixel = image[z];
-				*((uint16_t*)(fbp + location)) = image[z];
+				*((uint16_t*)(fbp + location)) =(uint16_t) image[z];
 				//pixel = image[z+1];
 				//*((uint8_t*)(fbp + location)) = pixel;
 				//printf("pixel no:%d,location:%d\n",pixel,location);
