@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
     	}
 
 
-	fbfd = open("/dev/fb1", O_RDWR);
+	fbfd = open("/dev/fb2", O_RDWR);
 
     	if (fbfd == -1) {
 
@@ -156,14 +156,37 @@ int main(int argc, char *argv[])
  
 
     	// Get variable screen information
-
     	if (ioctl(fbfd, FBIOGET_VSCREENINFO, &vinfo) == -1) {
 
         	perror("Error reading variable information");
 
         	exit(3);
 
-    	}
+    	}else
+	{
+		printf("bpp ayarlaniyor...\n");
+		if(vinfo.bits_per_pixel!=24)		//ekran bpp si 24 degilse
+		{
+			vinfo.bits_per_pixel=24;			//24 bit set et
+			if (ioctl(fbfd, FBIOPUT_VSCREENINFO, &vinfo) == -1) 	//datayı yaz
+			{
+				printf("FBIPUT_VSCREENINFO -1 dondurdu...\n");
+				perror("Error reading variable information");
+				exit(3);
+ 
+        		}
+			if (ioctl(fbfd, FBIOGET_VSCREENINFO, &vinfo) == -1) 		//tekrar kontrol yap
+			{
+				perror("Error reading variable information");
+				exit(3);
+			}
+			 if(vinfo.bits_per_pixel!=24)            //ekran bpp si 24 degilse
+	                {
+				printf("24bpp yapılamadı");
+			}else printf("ARtık 24bpp... *****");
+
+		}
+	}
 
  
 
