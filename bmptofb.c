@@ -162,7 +162,8 @@ int main(int argc, char *argv[])
 
         	exit(3);
 
-    	}else
+    	}
+    	/*else
 	{
 		printf("bpp ayarlaniyor...\n");
 		if(vinfo.bits_per_pixel!=24)		//ekran bpp si 24 degilse
@@ -186,7 +187,7 @@ int main(int argc, char *argv[])
 			}else printf("ARtık 24bpp... *****");
 
 		}
-	}
+	}*/
 
  
 
