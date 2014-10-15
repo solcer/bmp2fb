@@ -245,6 +245,8 @@ int main(int argc, char *argv[])
 	printf("# height               %u \n", bmp.height);
 	printf("# size			%u\n", bmp.buffer_size);
 	printf("# bpp			%d\n", bmp.bpp);
+	printf("# Encoding		%d\n", bmp.encoding);
+	
 	printf("%u %u 256\n", bmp.width, bmp.height);
 
 	{
@@ -254,13 +256,17 @@ int main(int argc, char *argv[])
 		// *(uint8_t*)fbp= (uint8_t *) bmp.bitmap;
 		
 		for (row = 0; row != bmp.height; row++) {
-			for (col = 0; col != bmp.buffer_size/bmp.height; col++) {
+			for (col = 0; col != bmp.width; col++) {
 				size_t z = (row * bmp.width + col) * BYTES_PER_PIXEL;
-				//printf("%u %u %u** ",	image[z],image[z + 1]);
+				printf("byte %d %d** \n",	image[z],image[z + 1]);
 				//pixel=z;
-				pixel = * (image+ (row * bmp.width + col));
+				printf("integer: %d\n",(uint16_t) image[z]);
+				//pixel = * (image+ (row * bmp.width + col));
                         	location = col+(row*finfo.line_length);
-                         	*((uint8_t*)(fbp + location)) = pixel;
+                         	//pixel = image[z];
+				*((uint16_t*)(fbp + location)) =(uint16_t) image[z];
+				//pixel = image[z+1];
+				//*((uint8_t*)(fbp + location)) = pixel;
 				//printf("pixel no:%d,location:%d\n",pixel,location);
  				//nanosleep((struct timespec[]){{0, 50000000}}, NULL);
 
