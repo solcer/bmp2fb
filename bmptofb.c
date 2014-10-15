@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
     	}
 
 
-	fbfd = open("/dev/fb2", O_RDWR);
+	fbfd = open("/dev/fb1", O_RDWR);
 
     	if (fbfd == -1) {
 
