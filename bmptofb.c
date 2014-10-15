@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
     	}
 
 
-	fbfd = open("/dev/fb0", O_RDWR);
+	fbfd = open("/dev/fb1", O_RDWR);
 
     	if (fbfd == -1) {
 
@@ -204,11 +204,12 @@ int main(int argc, char *argv[])
         {
                 for(x=0;x<finfo.line_length;x++)
                 {
-                        pixel=0xff;
+                     //   pixel=0xf8;
                         location = x+(y*finfo.line_length);
-                         *((uint8_t*)(fbp + location)) = pixel;
-                     //  *((uint8_t*)(fbp + location+1)) = pixel;
-
+			*((uint8_t*)(fbp + location)) = 0xff;
+                        *((uint8_t*)(fbp + location+1)) =0; // pixel;
+                        *((uint8_t*)(fbp + location+2)) = 0;
+			x+=2;
                 }
         }
 	nanosleep((struct timespec[]){{0, 50000000}}, NULL);
@@ -257,14 +258,16 @@ int main(int argc, char *argv[])
 		
 		for (row = 0; row != bmp.height; row++) {
 			for (col = 0; col != bmp.width; col++) {
-				size_t z = (row * bmp.width + col) * BYTES_PER_PIXEL;
-				printf("byte %d %d %d**  \n",	image[z],image[z + 1],image[z + 2]);
-				//pixel=z;
-				printf("integer: %d\n",(uint16_t) image[z] | image[z+1]<< 8 | image[z+2]<<16);
+				size_t z = (row * bmp.width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
+				//printf("byte %d %d %d**  \n",	image[z],image[z + 1],image[z + 2]);
+				//printf("integer: %d\n",(uint16_t) image[z] | image[z+1]<< 8 | image[z+2]<<16);
 				//pixel = * (image+ (row * bmp.width + col));
-                        	location = col+(row*finfo.line_length);
-                         	//pixel = image[z];
-				*((unsigned short int*)(fbp + location)) =  = image[z]<<16 | image[z+1]<< 8 | image[z+2];
+                        	location = col*3+(row*finfo.line_length);
+				// *((unsigned short int*)(fbp + location)) = 255;//image[z]<<0 | image[z+1]<< 8 | image[z+2]<<16;
+	                        *((uint8_t*)(fbp + location)) = image[z];
+        	                *((uint8_t*)(fbp + location+1)) =image[z+1];
+                	        *((uint8_t*)(fbp + location+2)) = image[z+2];
+
 				//pixel = image[z+1];
 				//*((uint8_t*)(fbp + location)) = pixel;
 				//printf("pixel no:%d,location:%d\n",pixel,location);
