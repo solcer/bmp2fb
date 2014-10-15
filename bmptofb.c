@@ -278,33 +278,53 @@ int main(int argc, char *argv[])
 		uint8_t *image;
 		image = (uint8_t *) bmp.bitmap;
 		// *(uint8_t*)fbp= (uint8_t *) bmp.bitmap;
-		
-		for (row = 0; row != bmp.height; row++) {
-			for (col = 0; col != bmp.width; col++) {
-				size_t z = (row * bmp.width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
-				//printf("byte %d %d %d**  \n",	image[z],image[z + 1],image[z + 2]);
-				//printf("integer: %d\n",(uint16_t) image[z] | image[z+1]<< 8 | image[z+2]<<16);
-				//pixel = * (image+ (row * bmp.width + col));
-                        	location = col*3+(row*finfo.line_length);
-				// *((unsigned short int*)(fbp + location)) = 255;//image[z]<<0 | image[z+1]<< 8 | image[z+2]<<16;
-	                        *((uint8_t*)(fbp + location)) = image[z];
-        	                *((uint8_t*)(fbp + location+1)) =image[z+1];
-                	        *((uint8_t*)(fbp + location+2)) = image[z+2];
+		switch(vinfo.bits_per_pixel)
+		{
+		  case 16:
+		    for (row = 0; row != bmp.height; row++) {
+			    for (col = 0; col != bmp.width; col++) {
+				    size_t z = (row * bmp.width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
+				    //printf("byte %d %d %d**  \n",	image[z],image[z + 1],image[z + 2]);
+				    //printf("integer: %d\n",(uint16_t) image[z] | image[z+1]<< 8 | image[z+2]<<16);
+				    //pixel = * (image+ (row * bmp.width + col));
+				    location = col*2+(row*finfo.line_length);			//her bir pixel 2 byte olduğu için col*2 yaptım.
+				    // *((unsigned short int*)(fbp + location)) = 255;//image[z]<<0 | image[z+1]<< 8 | image[z+2]<<16;
+				    //r<<11 | g << 5 | b;
+				    *((uint16_t*)(fbp + location)) = image[z]<<11|image[z+1]<<5|image[z+3];
+				    //*((uint8_t*)(fbp + location+1)) =image[z+1];
+			    }
+			    //printf("\n");
+		    }
+		      break;
+		  case 24:
+		    for (row = 0; row != bmp.height; row++) {
+			    for (col = 0; col != bmp.width; col++) {
+				    size_t z = (row * bmp.width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
+				    //printf("byte %d %d %d**  \n",	image[z],image[z + 1],image[z + 2]);
+				    //printf("integer: %d\n",(uint16_t) image[z] | image[z+1]<< 8 | image[z+2]<<16);
+				    //pixel = * (image+ (row * bmp.width + col));
+				    location = col*3+(row*finfo.line_length);
+				    // *((unsigned short int*)(fbp + location)) = 255;//image[z]<<0 | image[z+1]<< 8 | image[z+2]<<16;
+				    *((uint8_t*)(fbp + location)) = image[z];
+				    *((uint8_t*)(fbp + location+1)) =image[z+1];
+				    *((uint8_t*)(fbp + location+2)) = image[z+2];
 
-				//pixel = image[z+1];
-				//*((uint8_t*)(fbp + location)) = pixel;
-				//printf("pixel no:%d,location:%d\n",pixel,location);
- 				//nanosleep((struct timespec[]){{0, 50000000}}, NULL);
+				    //pixel = image[z+1];
+				    //*((uint8_t*)(fbp + location)) = pixel;
+				    //printf("pixel no:%d,location:%d\n",pixel,location);
+				    //nanosleep((struct timespec[]){{0, 50000000}}, NULL);
 
-				// pixel = * (image+ (row * bmp.width + col+1));
-                                //location = col+(row*finfo.line_length)+1; 
-                                //*((uint8_t*)(fbp + location)) = pixel; 
-				//printf("pixel no:%d,location:%d\n",pixel,location);
+				    // pixel = * (image+ (row * bmp.width + col+1));
+				    //location = col+(row*finfo.line_length)+1; 
+				    //*((uint8_t*)(fbp + location)) = pixel; 
+				    //printf("pixel no:%d,location:%d\n",pixel,location);
 
 
-				//printf("Location: %d, pixel: %d\r",location, pixel);
-			}
-			//printf("\n");
+				    //printf("Location: %d, pixel: %d\r",location, pixel);
+			    }
+			    //printf("\n");
+		    }
+		    break;
 		}
 	}
 
