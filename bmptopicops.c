@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
 
     	long int screensize = 0;
 
-    	char *fbp[EKRANADEDI] = 0;
+    	char *fbp[EKRANADEDI] ;
 
     	int x = 0, y = 0, i = 0;
 
@@ -103,6 +103,11 @@ int main(int argc, char *argv[])
 
     	long int location = 0;
 
+	for(i=0;i<EKRANADEDI;i++)
+	{
+	  fbp[i]=0;
+	  fbfd[i]=0;
+	}
 	if (argc != 2) {
 		fprintf(stderr, "Usage: %s image.bmp\n", argv[0]);
 		return 1;
