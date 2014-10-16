@@ -311,9 +311,10 @@ int main(int argc, char *argv[])
 			    for (col = 0; col != bmp.width; col++) {
 				    size_t z = (row * bmp.width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
 				    location = col*3+(row*finfo.line_length);
-				    *((uint8_t*)(fbp + location)) = image[z];
-				    *((uint8_t*)(fbp + location+1)) =image[z+1];
-				    *((uint8_t*)(fbp + location+2)) = image[z+2];
+				   // *((uint8_t*)(fbp + location)) = image[z];
+				   // *((uint8_t*)(fbp + location+1)) =image[z+1];
+				   // *((uint8_t*)(fbp + location+2)) = image[z+2];
+				*((uint32_t*)(fbp + location)) = image[z];
 			    }
 		    }
 		    break;
