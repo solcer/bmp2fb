@@ -283,6 +283,21 @@ int main(int argc, char *argv[])
 		{
 		  case 16:
 		    printf("Ekran 16bpp\n");
+<<<<<<< HEAD
+		    for (row = 0; row != bmp.height; row++) {
+			    for (col = 0; col != bmp.width; col++) {
+				    size_t z = (row * bmp.width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
+				    printf("byte %d %d %d**  \n",	image[z],image[z + 1],image[z + 2]);
+				    //printf("integer: %d\n",(uint16_t) image[z] | image[z+1]<< 8 | image[z+2]<<16);
+				    //pixel = * (image+ (row * bmp.width + col));
+				    location = col*2+(row*finfo.line_length);			//her bir pixel 2 byte olduğu için col*2 yaptım.
+				    // *((unsigned short int*)(fbp + location)) = 255;//image[z]<<0 | image[z+1]<< 8 | image[z+2]<<16;
+				    //r<<11 | g << 5 | b;
+				    *((uint16_t*)(fbp + location)) = image[z]<<8|image[z+1]<<3|image[z+2]>>3;
+				    //*((uint8_t*)(fbp + location+1)) =image[z+1];
+			    } 
+			    //printf("\n");
+=======
 		    if(bmp.bpp==16){
 		      for (row = 0; row != bmp.height; row++) {
 			      for (col = 0; col != bmp.width; col++) {
@@ -314,6 +329,7 @@ int main(int argc, char *argv[])
 			      } 
 			      //printf("\n");
 		      }
+>>>>>>> a09098f8d8d9af0684b619ccb7a792cbb0e6222a
 		    }
 		      break;
 		  case 24:
