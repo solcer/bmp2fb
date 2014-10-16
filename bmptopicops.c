@@ -108,6 +108,9 @@ int main(int argc, char *argv[])
 	uint8_t buffer[10];
 	unsigned char *data[EKRANADEDI];				//resim datasını içeren değişken
 
+	uint16_t row, col,pixelCounter=0;
+	uint8_t *image;
+	
 	for(i=0;i<EKRANADEDI;i++)
 	{
 	  fbp[i]=0;
@@ -241,48 +244,46 @@ int main(int argc, char *argv[])
 		printf("%u %u 256\n", bmp.width, bmp.height);
 		
 		
-			uint16_t row, col,pixelCounter=0;
-			uint8_t *image;
-			image = (uint8_t *) bmp.bitmap;
-			// *(uint8_t*)fbp= (uint8_t *) bmp.bitmap;
-			switch(vinfo[i].bits_per_pixel)
-			{
-				case 16:						//ekran çözünürlüğü 16bpp ise
-					//printf("Ekran 16bpp\n");
-					if(bmp.bpp==16){					//resim çözünülüğü 16bpp mi?
-						for (row = 0; row != bmp.height; row++) {
-							for (col = 0; col != bmp.width; col++) {
-								size_t z = (row * bmp.width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
-								//printf("byte %d %d %d**  \n",	image[z],image[z + 1],image[z + 2]);
-								location = col*2+(row*finfo[i].line_length);			//her bir pixel 2 byte olduğu için col*2 yaptım.
-								*((uint16_t*)(fbp[i] + location)) = image[z]<<8|image[z+1]<<3|image[z+2]>>3;		//ram'e datayı yazıyorum.
-							} 
-					}
-					}else if(bmp.bpp==24) 		//resim çözünürlüğü 24bpp mi?
-					{
-						//printf("16bpp ekrana 24bpp resim...");
-						for (row = 0; row != bmp.height; row++) {
-							for (col = 0; col != bmp.width; col++) {
-								size_t z = (row * bmp.width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
-								location = col*2+(row*finfo[i].line_length);			//her bir pixel 2 byte olduğu için col*2 yaptım.
-								*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
-								
-							} 
-						}
-					}
-					break;
-				case 24:
-					printf("Ekran 24bpp\n");
+		image = (uint8_t *) bmp.bitmap;
+		// *(uint8_t*)fbp= (uint8_t *) bmp.bitmap;
+		switch(vinfo[i].bits_per_pixel)
+		{
+			case 16:						//ekran çözünürlüğü 16bpp ise
+				//printf("Ekran 16bpp\n");
+				if(bmp.bpp==16){					//resim çözünülüğü 16bpp mi?
 					for (row = 0; row != bmp.height; row++) {
 						for (col = 0; col != bmp.width; col++) {
 							size_t z = (row * bmp.width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
-							location = col*3+(row*finfo[i].line_length);
-							*((uint32_t*)(fbp[i] + location)) = image[z];
-						}
-					}
-					break;
+							//printf("byte %d %d %d**  \n",	image[z],image[z + 1],image[z + 2]);
+							location = col*2+(row*finfo[i].line_length);			//her bir pixel 2 byte olduğu için col*2 yaptım.
+							*((uint16_t*)(fbp[i] + location)) = image[z]<<8|image[z+1]<<3|image[z+2]>>3;		//ram'e datayı yazıyorum.
+						} 
 				}
+				}else if(bmp.bpp==24) 		//resim çözünürlüğü 24bpp mi?
+				{
+					//printf("16bpp ekrana 24bpp resim...");
+					for (row = 0; row != bmp.height; row++) {
+						for (col = 0; col != bmp.width; col++) {
+							size_t z = (row * bmp.width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
+							location = col*2+(row*finfo[i].line_length);			//her bir pixel 2 byte olduğu için col*2 yaptım.
+							*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
+							
+						} 
+					}
+				}
+				break;
+			case 24:
+				printf("Ekran 24bpp\n");
+				for (row = 0; row != bmp.height; row++) {
+					for (col = 0; col != bmp.width; col++) {
+						size_t z = (row * bmp.width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
+						location = col*3+(row*finfo[i].line_length);
+						*((uint32_t*)(fbp[i] + location)) = image[z];
+					}
+				}
+				break;
 			}
+		}
 		
 
 
