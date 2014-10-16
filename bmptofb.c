@@ -223,7 +223,7 @@ int main(int argc, char *argv[])
 
 	printf("The framebuffer device was mapped to memory successfully.\n");
 
-
+/*
 	for(y=0;y<480;y++)
         {
                 for(x=0;x<finfo.line_length;x++)
@@ -237,7 +237,7 @@ int main(int argc, char *argv[])
                 }
         }
 	nanosleep((struct timespec[]){{0, 50000000}}, NULL);
-
+*/
 	/* create our bmp image */
 	bmp_create(&bmp, &bitmap_callbacks);
 
@@ -300,6 +300,7 @@ int main(int argc, char *argv[])
 		      }
 		    }else if(bmp.bpp==24) 
 		    {
+			printf("16bpp ekrana 24bpp resim...");
 		      for (row = 0; row != bmp.height; row++) {
 			      for (col = 0; col != bmp.width; col++) {
 				      size_t z = (row * bmp.width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
@@ -309,8 +310,8 @@ int main(int argc, char *argv[])
 				      location = col*2+(row*finfo.line_length);			//her bir pixel 2 byte olduğu için col*2 yaptım.
 				      // *((unsigned short int*)(fbp + location)) = 255;//image[z]<<0 | image[z+1]<< 8 | image[z+2]<<16;
 				      //r<<11 | g << 5 | b;
-				      *((uint16_t*)(fbp + location)) = image[z]<<11|image[z+1]<<5|image[z+2];
-				      //*((uint8_t*)(fbp + location+1)) =image[z+1];
+				      *((uint16_t*)(fbp + location)) = ((uint16_t)(image[z] << 11) &  0xf800) | ((uint16_t)(image[z+1] << 5) & 0x7E0) |(uint16_t)(image[z+2] & 0x1f);
+				      // *((uint8_t*)(fbp + location+1)) =image[z+1];
 			      } 
 			      //printf("\n");
 		      }
