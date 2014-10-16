@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
 		printf("i:%d\n",i);
 		sprintf(&buffer[0],"/dev/fb%d",i);
 		
-		c2m[i].console = (uint32_t) i;			//framebuffer a atanacak consol numarası
+		c2m[i].console = (uint32_t) i+10;			//framebuffer a atanacak consol numarası
 		c2m[i].framebuffer = (uint32_t) i;		//framebuffer numarası
 		
 		fbfd[EKRANADEDI] = open(buffer, O_RDWR);	//framebuffer ı açıyoru
