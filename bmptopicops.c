@@ -68,6 +68,7 @@ void perror_exit (char *error)
 
 }
 
+#define EKRANADEDI 6
 
 int main(int argc, char *argv[])
 {
@@ -84,15 +85,15 @@ int main(int argc, char *argv[])
 	
     	/* framebuffer */
 
-	int fbfd=0 , tty = 0;;
+	int fbfd[EKRANADEDI] , tty = 0;;
 
-    	struct fb_var_screeninfo vinfo;
+    	struct fb_var_screeninfo vinfo[EKRANADEDI];
 
-    	struct fb_fix_screeninfo finfo;
+    	struct fb_fix_screeninfo finfo[EKRANADEDI];
 
     	long int screensize = 0;
 
-    	char *fbp= 0;
+    	char *fbp[EKRANADEDI] = 0;
 
     	int x = 0, y = 0, i = 0;
 
@@ -115,14 +116,15 @@ int main(int argc, char *argv[])
 
     	}
 
-
-	fbfd = open("/dev/fb0", O_RDWR);
-	if (fbfd == -1) 
+	for(i=0;i<EKRANADEDI;i++)
 	{
-	      perror("Error: cannot open framebuffer device");
-	      exit(1);
+	  fbfd[0] = open("/dev/fb" + itoa(i), O_RDWR);
+	    if (fbfd[EKRANADEDI] == -1) 
+	    {
+		  perror("Error: cannot open framebuffer device :fb" + itoa(i));
+		  exit(1);
+	    }
 	}
-	
 	
 
     	
@@ -422,41 +424,3 @@ void bitmap_destroy(void *bitmap)
 	assert(bitmap);
 	free(bitmap);
 }
-
-/***********************************************************************
-* Function: convert24to16
-*
-* Purpose:  convert Windows BMP (24bpp GBR) to 16bpp 565 RGB
-*
-* Parameters:
-*     read_buffer : read from bmp data buffer (uint8) = bmp-file + data_offset
-*     write_buffer: write to picture buffer (uint16)
-*     width    : picture width
-*     height      : picture height
-*
-* Outputs: None
-*
-* Returns: Nothing
-
-* Notes: this function is also changing byte order to avoid
-*        wrong 'mirroring' of pictures
-*
-**********************************************************************/
-/*static void convert24to16(uint8_t* read_buffer,uint16_t* write_buffer,uint32_t width,uint32_t height)
-{
-uint32_t p_x; //picture x position
-uint32_t p_y; //picture y position
-write_buffer += (width*height)-1-width;//start at last line
-//read 24bit BGR to 16bit RGB
-for(p_y=0;p_y>3;//read upper 5 bits blue
-   read_buffer++; //next color byte
-   *write_buffer |=((*read_buffer &0xFC)<<3);//read upper 6 bits green
-   read_buffer++; //next color byte
-   *write_buffer |=((*read_buffer & 0xF8)<<8);//add upper 5 bits red
-   write_buffer++; //next picture int
-   read_buffer++; //next color byte
-  } //end pixel
-  write_buffer-= 2*width; //2 lines back
-} //end line
-} //end function
-*/
