@@ -118,18 +118,33 @@ int main(int argc, char *argv[])
 
 	for(i=0;i<EKRANADEDI;i++)
 	{
-	  fbfd[0] = open("/dev/fb" + itoa(i), O_RDWR);
-	    if (fbfd[EKRANADEDI] == -1) 
-	    {
-		  perror("Error: cannot open framebuffer device :fb" + itoa(i));
-		  exit(1);
-	    }
+		fbfd[EKRANADEDI] = open("/dev/fb" + itoa(i), O_RDWR);
+		if (fbfd[EKRANADEDI] == -1) 
+		{
+		      perror("Error: cannot open framebuffer device :fb" + itoa(i));
+		      exit(1);
+		}
+		if (ioctl(fbfd[EKRANADEDI], FBIOGET_FSCREENINFO, &finfo[EKRANADEDI]) == -1) {
+
+		    perror("Error reading fixed information: fb" +itoa(i));
+
+		    exit(2);
+
+		}
+
+		// Get variable screen information
+		if (ioctl(fbfd[EKRANADEDI], FBIOGET_VSCREENINFO, &vinfo[EKRANADEDI]) == -1) {
+
+			perror("Error reading variable information: fb" + itoa(i));
+
+			exit(3);
+		}
 	}
 	
 
-    	
+/*    	
 
-    	printf("The framebuffer device was opened successfully.\n");
+    	printf("The framebuffer devices was opened successfully.\n");
 
  
 
@@ -147,61 +162,12 @@ int main(int argc, char *argv[])
 
     	// Get fixed screen information
 
-    	if (ioctl(fbfd, FBIOGET_FSCREENINFO, &finfo) == -1) {
-
-        	perror("Error reading fixed information");
-
-        	exit(2);
-
-    	}
-
- 
-
-    	// Get variable screen information
-    	if (ioctl(fbfd, FBIOGET_VSCREENINFO, &vinfo) == -1) {
-
-        	perror("Error reading variable information");
-
-        	exit(3);
-
-    	}
-    	/*else
-	{
-		printf("bpp ayarlaniyor...\n");
-		if(vinfo.bits_per_pixel!=24)		//ekran bpp si 24 degilse
-		{
-			vinfo.bits_per_pixel=24;			//24 bit set et
-			if (ioctl(fbfd, FBIOPUT_VSCREENINFO, &vinfo) == -1) 	//datayı yaz
-			{
-				printf("FBIPUT_VSCREENINFO -1 dondurdu...\n");
-				perror("Error reading variable information");
-				exit(3);
- 
-        		}
-			if (ioctl(fbfd, FBIOGET_VSCREENINFO, &vinfo) == -1) 		//tekrar kontrol yap
-			{
-				perror("Error reading variable information");
-				exit(3);
-			}
-			 if(vinfo.bits_per_pixel!=24)            //ekran bpp si 24 degilse
-	                {
-				printf("24bpp yapılamadı");
-			}else printf("ARtık 24bpp... *****");
-
-		}
-	}*/
-
- 
-
-    	//printf("Fixed screen information: %dx%d, %dbpp\n", finfo.xres, finfo.yres, finfo.bits_per_pixel);
-
-    	printf("Variable screen information: %dx%d, %dbpp\n", vinfo.xres, vinfo.yres, vinfo.bits_per_pixel);
+    	
+    	//printf("Variable screen information: %dx%d, %dbpp\n", vinfo.xres, vinfo.yres, vinfo.bits_per_pixel);
 
  
 
     	// Figure out the size of the screen in bytes
-
-    	//screensize = vinfo.xres * vinfo.yres * vinfo.bits_per_pixel / 8;
 
     	screensize = vinfo.yres_virtual * finfo.line_length;
 
@@ -226,27 +192,15 @@ int main(int argc, char *argv[])
 	printf("The framebuffer device was mapped to memory successfully.\n");
 
 
-/*	for(y=0;y<480;y++)
-        {
-                for(x=0;x<finfo.line_length;x++)
-                {
-                     //   pixel=0xf8;
-                        location = x+(y*finfo.line_length);
-			*((uint8_t*)(fbp + location)) = 0xff;
-                        *((uint8_t*)(fbp + location+1)) =0; // pixel;
-                        *((uint8_t*)(fbp + location+2)) = 0;
-			x+=2;
-                }
-        }*/
 //	nanosleep((struct timespec[]){{0, 50000000}}, NULL);
 
-	/* create our bmp image */
+	// create our bmp image 
 	bmp_create(&bmp, &bitmap_callbacks);
 
-	/* load file into memory */
+	// load file into memory 
 	unsigned char *data = load_file(argv[1], &size);
 
-	/* analyse the BMP */
+	// analyse the BMP 
 	code = bmp_analyse(&bmp, size, data);
 	if (code != BMP_OK) {
 		warning("bmp_analyse", code);
@@ -254,12 +208,12 @@ int main(int argc, char *argv[])
 		goto cleanup;
 	}
 
-	/* decode the image */
+	// decode the image 
 	code = bmp_decode(&bmp);
-	/* code = bmp_decode_trans(&bmp, TRANSPARENT_COLOR); */
+	// code = bmp_decode_trans(&bmp, TRANSPARENT_COLOR); 
 	if (code != BMP_OK) {
 		warning("bmp_decode", code);
-		/* allow partially decoded images */
+		// allow partially decoded images 
 		if (code != BMP_INSUFFICIENT_DATA) {
 			res = 1;
 			goto cleanup;
@@ -313,16 +267,13 @@ int main(int argc, char *argv[])
 			    for (col = 0; col != bmp.width; col++) {
 				    size_t z = (row * bmp.width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
 				    location = col*3+(row*finfo.line_length);
-				   // *((uint8_t*)(fbp + location)) = image[z];
-				   // *((uint8_t*)(fbp + location+1)) =image[z+1];
-				   // *((uint8_t*)(fbp + location+2)) = image[z+2];
-				*((uint32_t*)(fbp + location)) = image[z];
+				    *((uint32_t*)(fbp + location)) = image[z];
 			    }
 		    }
 		    break;
 		}
 	}
-
+*/
 cleanup:
 	/* clean up */
 	bmp_finalise(&bmp);
