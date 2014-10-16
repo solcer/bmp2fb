@@ -144,17 +144,18 @@ int main(int argc, char *argv[])
 
 			exit(3);
 		}
+		printf("Variable screen information fb%d: %dx%d, %dbpp\n",i, vinfo[EKRANADEDI].xres, vinfo[EKRANADEDI].yres, vinfo[EKRANADEDI].bits_per_pixel);
 	}
 	
 
-/*    	
+    	
 
     	printf("The framebuffer devices was opened successfully.\n");
 
  
 
  
-
+/*
     	tty = open("/dev/tty1", O_RDWR);
 
  
@@ -168,7 +169,7 @@ int main(int argc, char *argv[])
     	// Get fixed screen information
 
     	
-    	//printf("Variable screen information: %dx%d, %dbpp\n", vinfo.xres, vinfo.yres, vinfo.bits_per_pixel);
+    	printf("Variable screen information: %dx%d, %dbpp\n", vinfo.xres, vinfo.yres, vinfo.bits_per_pixel);
 
  
 
@@ -278,16 +279,18 @@ int main(int argc, char *argv[])
 		    break;
 		}
 	}
-*/
+
 cleanup:
-	/* clean up */
+	// clean up 
 	bmp_finalise(&bmp);
 	free(data);
 	
-	munmap(fbp, screensize);
-
-    	close(fbfd);
-
+	munmap(fbp, screensize); 
+	*/
+	for(i=0;i<EKRANADEDI;i++)
+	{
+	    close(fbfd[EKRANADEDI]);
+	}
 
 	return res;
 }
