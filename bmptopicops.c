@@ -240,7 +240,7 @@ int main(int argc, char *argv[])
 		
 		printf("%u %u 256\n", bmp.width, bmp.height);
 		
-		{
+		
 			uint16_t row, col,pixelCounter=0;
 			uint8_t *image;
 			image = (uint8_t *) bmp.bitmap;
@@ -283,7 +283,7 @@ int main(int argc, char *argv[])
 					break;
 				}
 			}
-		}
+		
 
 
 
