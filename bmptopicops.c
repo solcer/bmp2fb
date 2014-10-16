@@ -91,6 +91,8 @@ int main(int argc, char *argv[])
 
     	struct fb_fix_screeninfo finfo[EKRANADEDI];
 
+	struct fb_con2fbmap c2m[EKRANADEDI];			//tty leri framebuffer a atamak için kullanılıyor
+	
     	long int screensize = 0;
 
     	char *fbp[EKRANADEDI] ;
@@ -102,6 +104,8 @@ int main(int argc, char *argv[])
     	bool stripe = true;
 
     	long int location = 0;
+	
+	uint8_t buffer[10];
 
 	for(i=0;i<EKRANADEDI;i++)
 	{
@@ -123,15 +127,30 @@ int main(int argc, char *argv[])
 
 	for(i=0;i<EKRANADEDI;i++)
 	{
-		fbfd[EKRANADEDI] = open("/dev/fb" + itoa(i), O_RDWR);
-		if (fbfd[EKRANADEDI] == -1) 
+		sprintf(&buffer[0],"/dev/fb%d",i);
+		
+		c2m[i].console = (uint32_t) i;			//framebuffer a atanacak consol numarası
+		c2m[i].framebuffer = (uint32_t) i;		//framebuffer numarası
+		
+		fbfd[EKRANADEDI] = open(buffer, O_RDWR);	//framebuffer ı açıyoru
+		if (fbfd[EKRANADEDI] == -1) 			//hata geldi mi?
 		{
-		      perror("Error: cannot open framebuffer device :fb" + itoa(i));
+		      perror("Error: cannot open framebuffer device :" + buffer);
 		      exit(1);
 		}
+		
+		if (ioctl(fbfd[EKRANADEDI], FBIOPUT_CON2FBMAP, &c2m[EKRANADEDI])) 			//framebufferı tty lere assign et
+		{
+		  fprintf(stderr, "%s: Cannot set console mapping\n", progname);
+		  perror("Error: cannot assign framebuffer to tty device : " + buffer);
+		  exit(1);
+		  
+		}
+		
+		
 		if (ioctl(fbfd[EKRANADEDI], FBIOGET_FSCREENINFO, &finfo[EKRANADEDI]) == -1) {
 
-		    perror("Error reading fixed information: fb" +itoa(i));
+		    perror("Error reading fixed information :" + buffer);
 
 		    exit(2);
 
@@ -140,7 +159,7 @@ int main(int argc, char *argv[])
 		// Get variable screen information
 		if (ioctl(fbfd[EKRANADEDI], FBIOGET_VSCREENINFO, &vinfo[EKRANADEDI]) == -1) {
 
-			perror("Error reading variable information: fb" + itoa(i));
+			perror("Error reading variable information :" + buffer);
 
 			exit(3);
 		}
