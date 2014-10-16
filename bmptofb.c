@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
 
  
 
-    	tty = open("/dev/tty1", O_RDWR);
+    	tty = open("/dev/tty0", O_RDWR);
 
  
 
