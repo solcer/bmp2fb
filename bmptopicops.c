@@ -44,7 +44,7 @@ void *bitmap_create(int width, int height, unsigned int state);
 unsigned char *bitmap_get_buffer(void *bitmap);
 size_t bitmap_get_bpp(void *bitmap);
 void bitmap_destroy(void *bitmap);
-
+void showBitmap(uint8_t *resim, char *fbPointer);
 
 void handler (int sig)
 
@@ -106,6 +106,7 @@ int main(int argc, char *argv[])
     	long int location = 0;
 	
 	uint8_t buffer[10];
+	unsigned char *data[EKRANADEDI];				//resim datasını içeren değişken
 
 	for(i=0;i<EKRANADEDI;i++)
 	{
@@ -127,44 +128,44 @@ int main(int argc, char *argv[])
 
     	}
 
-	for(i=0;i<EKRANADEDI;i++)
+	for(i=0;i<EKRANADEDI;i++)				//ekranları tty lere atayıp ram'de pointer a işaretliyor
 	{
 		//printf("i:%d\n",i);		
-		
+
 		c2m[i].console = (uint32_t) 10+i;			//framebuffer a atanacak consol numarası
 		c2m[i].framebuffer = (uint32_t) i;		//framebuffer numarası
-		
+
 		sprintf(&buffer[0],"/dev/fb%d",i);
 		fbfd[i] = open(buffer, O_RDWR);	//framebuffer ı açıyoru
 		if (fbfd[i] == -1) 			//hata geldi mi?
 		{
-		      perror("Error: cannot open framebuffer device :" );
-		      exit(1);
+			perror("Error: cannot open framebuffer device :" );
+			exit(1);
 		}
 		printf("The framebuffer %d  was opened successfully.\n",i);
-		
+
 		if (ioctl(fbfd[i], FBIOPUT_CON2FBMAP, &c2m[i])) 			//framebufferı tty lere assign et
 		{
-		  //fprintf(stderr, "%s: Cannot set console mapping\n", progname);
-		  perror("Error: cannot assign framebuffer to tty device : " );
-		  exit(1);
-		  
+			//fprintf(stderr, "%s: Cannot set console mapping\n", progname);
+			perror("Error: cannot assign framebuffer to tty device : " );
+			exit(1);
+			
 		}
 		printf("The framebuffer %d  was assigned successfully to tty%d.\n",i,i+10);
-		
-		
+
+
 		sprintf(&buffer[0],"/dev/tty%d",i+10);
 		tty[i] = open(buffer, O_RDWR);
 		if(ioctl(tty[i], KDSETMODE, KD_GRAPHICS) == -1)
-		  printf("FAILED to set graphics mode on tty%d\n",i+10);
+			printf("FAILED to set graphics mode on tty%d\n",i+10);
 
-		
-		
+
+
 		if (ioctl(fbfd[i], FBIOGET_FSCREENINFO, &finfo[i]) == -1) {
 
-		    perror("Error reading fixed information :");
+			perror("Error reading fixed information :");
 
-		    exit(2);
+			exit(2);
 
 		}
 
@@ -176,100 +177,55 @@ int main(int argc, char *argv[])
 			exit(3);
 		}
 		printf("Variable screen information fb%d: %dx%d, %dbpp\n",i, vinfo[i].xres, vinfo[i].yres, vinfo[i].bits_per_pixel);
-		
-		
+
+
 		// Figure out the size of the screen in bytes
 
 		screensize[i] = vinfo[i].yres_virtual * finfo[i].line_length;
 
 		printf("screensize[%d]: %d\n",i,screensize[i]); 
 
- 
 
- 
 
-	      // Map the device to memory
 
-	      fbp[i] = (char *)mmap(0, screensize[i], PROT_READ | PROT_WRITE, MAP_SHARED, fbfd[i], 0);
 
-	      if ((int)fbp[i] == -1) {
+		// Map the device to memory
 
-        	perror("Error: failed to map framebuffer device to memory");
+		fbp[i] = (char *)mmap(0, screensize[i], PROT_READ | PROT_WRITE, MAP_SHARED, fbfd[i], 0);
 
-        	exit(4);
+		if ((int)fbp[i] == -1) {
 
-	      }
-	      printf("The framebuffer[%d] was mapped to memory successfully.\n",i);
-	
+		perror("Error: failed to map framebuffer device to memory");
+
+		exit(4);
+
+		}
+		printf("The framebuffer[%d] was mapped to memory successfully.\n",i);
+
 
 	}
 	
-
-    	
-
-    	
-
- 
-
- 
-/*
-    	tty = open("/dev/tty1", O_RDWR);
-
- 
-
-    	if(ioctl(tty, KDSETMODE, KD_GRAPHICS) == -1)
-
-		printf("Failed to set graphics mode on tty1\n");
-
- 
-
-    	// Get fixed screen information
-
-    	
-    	printf("Variable screen information: %dx%d, %dbpp\n", vinfo.xres, vinfo.yres, vinfo.bits_per_pixel);
-
- 
-
-    	// Figure out the size of the screen in bytes
-
-    	screensize = vinfo.yres_virtual * finfo.line_length;
-
-    	printf("screensize: %d\n",screensize); 
-
- 
-
- 
-
-    	// Map the device to memory
-
-    	fbp = (char *)mmap(0, screensize, PROT_READ | PROT_WRITE, MAP_SHARED, fbfd, 0);
-
-    	if ((int)fbp == -1) {
-
-        	perror("Error: failed to map framebuffer device to memory");
-
-        	exit(4);
-
-    	}
-
-	printf("The framebuffer device was mapped to memory successfully.\n");
-
-
-//	nanosleep((struct timespec[]){{0, 50000000}}, NULL);
-
 	// create our bmp image 
 	bmp_create(&bmp, &bitmap_callbacks);
-
-	// load file into memory 
-	unsigned char *data = load_file(argv[1], &size);
-
-	// analyse the BMP 
-	code = bmp_analyse(&bmp, size, data);
-	if (code != BMP_OK) {
-		warning("bmp_analyse", code);
-		res = 1;
-		goto cleanup;
+	//showBitmap();
+	for(i=0;i<EKRANADEDI;i++)		//bitmap işleri
+	{  
+		// load file into memory 
+		sprintf(&buffer[0],"./samplescreen%d.bmp",i);
+		data[i] = load_file(buffer, &size);
+		// analyse the BMP 
+		code = bmp_analyse(&bmp, size, data[i]);
+		if (code != BMP_OK) {
+			warning("bmp_analyse", code);
+			res = 1;
+			goto cleanup;
+		}
 	}
+	
+
+	
+/*
+	
 
 	// decode the image 
 	code = bmp_decode(&bmp);
@@ -336,17 +292,17 @@ int main(int argc, char *argv[])
 		    break;
 		}
 	}
-
+*/
 cleanup:
 	// clean up 
 	bmp_finalise(&bmp);
-	free(data);
 	
-	munmap(fbp, screensize); 
-	*/
+	
 	for(i=0;i<EKRANADEDI;i++)
 	{
-	    close(fbfd[EKRANADEDI]);
+		free(data[i]);
+		munmap(fbp[i], screensize[i]); 
+		close(fbfd[i]);
 	}
 
 	return res;
@@ -439,4 +395,9 @@ void bitmap_destroy(void *bitmap)
 {
 	assert(bitmap);
 	free(bitmap);
+}
+
+void showBitmap(uint8_t *resim, char *fbPointer)
+{
+	
 }
