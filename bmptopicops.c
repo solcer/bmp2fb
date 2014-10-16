@@ -249,8 +249,9 @@ int main(int argc, char *argv[])
 		switch(vinfo[i].bits_per_pixel)
 		{
 			case 16:						//ekran çözünürlüğü 16bpp ise
-				//printf("Ekran 16bpp\n");
+				printf("Ekran 16bpp\n");
 				if(bmp.bpp==16){					//resim çözünülüğü 16bpp mi?
+					printf("resim 16bpp");
 					for (row = 0; row != bmp.height; row++) {
 						for (col = 0; col != bmp.width; col++) {
 							size_t z = (row * bmp.width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
@@ -261,7 +262,7 @@ int main(int argc, char *argv[])
 				}
 				}else if(bmp.bpp==24) 		//resim çözünürlüğü 24bpp mi?
 				{
-					//printf("16bpp ekrana 24bpp resim...");
+					printf("16bpp ekrana 24bpp resim...");
 					for (row = 0; row != bmp.height; row++) {
 						for (col = 0; col != bmp.width; col++) {
 							size_t z = (row * bmp.width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
@@ -270,6 +271,8 @@ int main(int argc, char *argv[])
 							
 						} 
 					}
+				}else {
+					printf("ahanda resim yanlış");
 				}
 				break;
 			case 24:
