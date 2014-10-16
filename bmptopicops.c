@@ -211,7 +211,7 @@ int main(int argc, char *argv[])
 	for(i=0;i<EKRANADEDI;i++)		//bitmap işleri
 	{  
 		// load file into memory 
-		sprintf(&buffer[0],"./samplescreen%d.bmp",i);
+		sprintf(&buffer[0],"./images/samplescreen%d.bmp",i);
 		data[i] = load_file(buffer, &size);
 		// analyse the BMP 
 		code = bmp_analyse(&bmp, size, data[i]);
