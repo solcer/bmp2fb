@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
 
 	struct fb_con2fbmap c2m[EKRANADEDI];			//tty leri framebuffer a atamak için kullanılıyor
 	
-    	long int screensize[] ;
+    	long int screensize[EKRANADEDI] ;
 
     	char *fbp[EKRANADEDI] ;
 
@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
 	  fbp[i]=0;
 	  fbfd[i]=0;
 	  tty[i]=0;
-	  screensize[i]=0
+	  screensize[i]=0;
 	}
 	if (argc != 2) {
 		fprintf(stderr, "Usage: %s image.bmp\n", argv[0]);
