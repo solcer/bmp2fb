@@ -259,7 +259,7 @@ int main(int argc, char *argv[])
 							location = col*2+(row*finfo[i].line_length);			//her bir pixel 2 byte olduğu için col*2 yaptım.
 							*((uint16_t*)(fbp[i] + location)) = image[z]<<8|image[z+1]<<3|image[z+2]>>3;		//ram'e datayı yazıyorum.
 						} 
-				}
+					}
 				}else if(bmp.bpp==24) 		//resim çözünürlüğü 24bpp mi?
 				{
 					printf("16bpp ekrana 24bpp resim...");
