@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
     	}
 
 
-	fbfd = open("/dev/fb1", O_RDWR);
+	fbfd = open("/dev/fb0", O_RDWR);
 
     	if (fbfd == -1) {
 
@@ -224,7 +224,7 @@ int main(int argc, char *argv[])
 	printf("The framebuffer device was mapped to memory successfully.\n");
 
 
-	for(y=0;y<480;y++)
+/*	for(y=0;y<480;y++)
         {
                 for(x=0;x<finfo.line_length;x++)
                 {
@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
                         *((uint8_t*)(fbp + location+2)) = 0;
 			x+=2;
                 }
-        }
+        }*/
 //	nanosleep((struct timespec[]){{0, 50000000}}, NULL);
 
 	/* create our bmp image */
@@ -304,12 +304,13 @@ int main(int argc, char *argv[])
 		      for (row = 0; row != bmp.height; row++) {
 			      for (col = 0; col != bmp.width; col++) {
 				      size_t z = (row * bmp.width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
-				      printf("byte %d %d %d**  \n",	image[z],image[z + 1],image[z + 2]);
-				      printf("integer: 0x%x\n",((uint16_t)(image[z] << 11) &  0xf800) | ((uint16_t)(image[z+1] << 5) & 0x7E0) |(uint16_t)(image[z+2] & 0x1f));
+				    //  printf("byte %d %d %d**  \n",	image[z],image[z + 1],image[z + 2]);
+				    //  printf("integer: 0x%x\n",((uint16_t)(image[z] << 11) &  0xf800) | ((uint16_t)(image[z+1] << 5) & 0x7E0) |(uint16_t)(image[z+2] & 0x1f));
 				      location = col*2+(row*finfo.line_length);			//her bir pixel 2 byte olduğu için col*2 yaptım.
 				      // *((unsigned short int*)(fbp + location)) = 255;//image[z]<<0 | image[z+1]<< 8 | image[z+2]<<16;
 				      //r<<11 | g << 5 | b;
-				      *((uint16_t*)(fbp + location)) = ((uint16_t)(image[z] << 11) &  0xf800) | ((uint16_t)(image[z+1] << 5) & 0x7E0) |(uint16_t)(image[z+2] & 0x1f);
+					*((uint16_t*)(fbp + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
+				     // *((uint16_t*)(fbp + location)) = ((uint16_t)(image[z] << 11) &  0xf800) | ((uint16_t)(image[z+1] << 5) & 0x7E0) |(uint16_t)(image[z+2] & 0x1f);
 				      // *((uint8_t*)(fbp + location+1)) =image[z+1];
 			      } 
 			      //printf("\n");
