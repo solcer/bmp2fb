@@ -127,6 +127,7 @@ int main(int argc, char *argv[])
 
 	for(i=0;i<EKRANADEDI;i++)
 	{
+		printf("i:%d\n",i);
 		sprintf(&buffer[0],"/dev/fb%d",i);
 		
 		c2m[i].console = (uint32_t) i;			//framebuffer a atanacak consol numarası
