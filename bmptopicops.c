@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
 	
     	/* framebuffer */
 
-	int fbfd[EKRANADEDI] , tty = 0;;
+	int fbfd[EKRANADEDI] , tty[EKRANADEDI] ;
 
     	struct fb_var_screeninfo vinfo[EKRANADEDI];
 
@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
 
 	struct fb_con2fbmap c2m[EKRANADEDI];			//tty leri framebuffer a atamak için kullanılıyor
 	
-    	long int screensize = 0;
+    	long int screensize[] ;
 
     	char *fbp[EKRANADEDI] ;
 
@@ -111,6 +111,8 @@ int main(int argc, char *argv[])
 	{
 	  fbp[i]=0;
 	  fbfd[i]=0;
+	  tty[i]=0;
+	  screensize[i]=0
 	}
 	if (argc != 2) {
 		fprintf(stderr, "Usage: %s image.bmp\n", argv[0]);
@@ -127,18 +129,19 @@ int main(int argc, char *argv[])
 
 	for(i=0;i<EKRANADEDI;i++)
 	{
-		printf("i:%d\n",i);
-		sprintf(&buffer[0],"/dev/fb%d",i);
+		//printf("i:%d\n",i);		
 		
 		c2m[i].console = (uint32_t) 10+i;			//framebuffer a atanacak consol numarası
 		c2m[i].framebuffer = (uint32_t) i;		//framebuffer numarası
 		
+		sprintf(&buffer[0],"/dev/fb%d",i);
 		fbfd[i] = open(buffer, O_RDWR);	//framebuffer ı açıyoru
 		if (fbfd[i] == -1) 			//hata geldi mi?
 		{
 		      perror("Error: cannot open framebuffer device :" );
 		      exit(1);
 		}
+		printf("The framebuffer %d  was opened successfully.\n",i);
 		
 		if (ioctl(fbfd[i], FBIOPUT_CON2FBMAP, &c2m[i])) 			//framebufferı tty lere assign et
 		{
@@ -147,6 +150,14 @@ int main(int argc, char *argv[])
 		  exit(1);
 		  
 		}
+		printf("The framebuffer %d  was assigned successfully to tty%d.\n",i,i+10);
+		
+		
+		sprintf(&buffer[0],"/dev/tty%d",i+10);
+		tty[i] = open(buffer, O_RDWR);
+		if(ioctl(tty[i], KDSETMODE, KD_GRAPHICS) == -1)
+		  printf("FAILED to set graphics mode on tty%d\n",i+10);
+
 		
 		
 		if (ioctl(fbfd[i], FBIOGET_FSCREENINFO, &finfo[i]) == -1) {
@@ -165,12 +176,38 @@ int main(int argc, char *argv[])
 			exit(3);
 		}
 		printf("Variable screen information fb%d: %dx%d, %dbpp\n",i, vinfo[i].xres, vinfo[i].yres, vinfo[i].bits_per_pixel);
+		
+		
+		// Figure out the size of the screen in bytes
+
+		screensize[i] = vinfo[i].yres_virtual * finfo[i].line_length;
+
+		printf("screensize[%d]: %d\n",i,screensize[i]); 
+
+ 
+
+ 
+
+	      // Map the device to memory
+
+	      fbp[i] = (char *)mmap(0, screensize[i], PROT_READ | PROT_WRITE, MAP_SHARED, fbfd[i], 0);
+
+	      if ((int)fbp[i] == -1) {
+
+        	perror("Error: failed to map framebuffer device to memory");
+
+        	exit(4);
+
+	      }
+	      printf("The framebuffer[%d] was mapped to memory successfully.\n",i);
+	
+
 	}
 	
 
     	
 
-    	printf("The framebuffer devices was opened successfully.\n");
+    	
 
  
 
