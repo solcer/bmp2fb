@@ -135,14 +135,14 @@ int main(int argc, char *argv[])
 		fbfd[EKRANADEDI] = open(buffer, O_RDWR);	//framebuffer ı açıyoru
 		if (fbfd[EKRANADEDI] == -1) 			//hata geldi mi?
 		{
-		      perror("Error: cannot open framebuffer device :" + buffer);
+		      perror("Error: cannot open framebuffer device :" );
 		      exit(1);
 		}
 		
 		if (ioctl(fbfd[EKRANADEDI], FBIOPUT_CON2FBMAP, &c2m[EKRANADEDI])) 			//framebufferı tty lere assign et
 		{
-		  fprintf(stderr, "%s: Cannot set console mapping\n", progname);
-		  perror("Error: cannot assign framebuffer to tty device : " + buffer);
+		  //fprintf(stderr, "%s: Cannot set console mapping\n", progname);
+		  perror("Error: cannot assign framebuffer to tty device : " );
 		  exit(1);
 		  
 		}
@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
 		
 		if (ioctl(fbfd[EKRANADEDI], FBIOGET_FSCREENINFO, &finfo[EKRANADEDI]) == -1) {
 
-		    perror("Error reading fixed information :" + buffer);
+		    perror("Error reading fixed information :");
 
 		    exit(2);
 
@@ -159,7 +159,7 @@ int main(int argc, char *argv[])
 		// Get variable screen information
 		if (ioctl(fbfd[EKRANADEDI], FBIOGET_VSCREENINFO, &vinfo[EKRANADEDI]) == -1) {
 
-			perror("Error reading variable information :" + buffer);
+			perror("Error reading variable information :" );
 
 			exit(3);
 		}
