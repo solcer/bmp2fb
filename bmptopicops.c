@@ -256,7 +256,9 @@ int main(int argc, char *argv[])
 				goto cleanup;
 			}
 		}
-		image = (uint8_t *) bmp[i].bitmap;
+		//image = (uint8_t *) bmp[i].bitmap;
+		
+		image = (uint8_t *) data[i][0x7a];
 	}
 		for (row = 0; row != bmp[0].height; row++) {
 			//printf("row: %d",row);
