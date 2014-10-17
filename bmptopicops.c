@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
 	
 	int x = 0, y = 0, i = 0;
 
-    	uint8_t pixel = 0;
+    	uint8_t pixel = 0,dondurt=0;
 
     	bool stripe = true;
 
@@ -228,14 +228,14 @@ int main(int argc, char *argv[])
                         }
                 }
         }
-
+dondur:
 	for(i=0;i<EKRANADEDI;i++)
 	{
 		// create our bmp image 
 		bmp_create(&bmp[i], &bitmap_callbacks);
 		//showBitmap();
 		// load file into memory 
-		sprintf(&buffer[0],"/home/pi/selim/bmp2fb/images/samplescreen%d.bmp",i);
+		sprintf(&buffer[0],"/home/pi/selim/bmp2fb/images/v%d/samplescreen%d.bmp",dondurt,i);
 		//printf("%s",buffer);
 		data[i] = load_file(buffer, &size);
 		// analyse the BMP 
@@ -245,7 +245,7 @@ int main(int argc, char *argv[])
 			res = 1;
 			goto cleanup;
 		}
-		// decode the image 
+		// decode the image
 		code = bmp_decode(&bmp[i]);
 		// code = bmp_decode_trans(&bmp, TRANSPARENT_COLOR); 
 		if (code != BMP_OK) {
@@ -272,6 +272,9 @@ int main(int argc, char *argv[])
 				}
 			}
 		}
+/*	dondurt++;
+	if(dondurt==9) dondurt=0;
+	goto dondur;*/
 	//}
 
 	/*	printf("P%d\n",i);
@@ -282,23 +285,28 @@ int main(int argc, char *argv[])
 		printf("# Encoding		%d\n", bmp.encoding);
 		printf("%u %u 256\n", bmp.width, bmp.height);
 		printf("sizeof image: %d\n",image);*/
-	
-	
-	
-	
-	
+
 cleanup:
 	// clean up 
 	bmp_finalise(&bmp[i]);
-	
-	
+ 
+
 	for(i=0;i<EKRANADEDI;i++)
 	{
 		free(data[i]);
-		munmap(fbp[i], screensize[i]); 
-		close(fbfd[i]);
+	//	munmap(fbp[i], screensize[i]); 
+	//	close(fbfd[i]);
 	}
-	printf("cikiliyor\n");
+	printf("donuyor\n");
+	 dondurt++;
+        if(dondurt==9) dondurt=0;
+        goto dondur;
+	 for(i=0;i<EKRANADEDI;i++)
+        {
+	 	munmap(fbp[i], screensize[i]); 
+         	close(fbfd[i]);
+	}
+
 	return res;
 }
 
