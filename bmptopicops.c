@@ -207,7 +207,22 @@ int main(int argc, char *argv[])
 
 
 	}
-	
+	 for(y=0;y<480;y++)
+        {
+                for(x=0;x<finfo[0].line_length;x++)
+                {
+                        //   pixel=0xf8;
+                        for(i=0;i<EKRANADEDI;i++)
+                        {
+                                location = x+(y*finfo[i].line_len$
+                                *((uint16_t*)(fbp[i] + location))$
+                        //      *((uint8_t*)(fbp[i] + location+1)$
+                                // *((uint8_t*)(fbp[i] + location$
+                                //x+=2;
+                        }
+                }
+        }
+
 	// create our bmp image 
 	bmp_create(&bmp, &bitmap_callbacks);
 	//showBitmap();
