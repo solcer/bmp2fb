@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
 
     	long int location = 0;
 	
-	uint8_t buffer[10];
+	uint8_t buffer[100];
 	
 
 	uint16_t row, col;
@@ -234,7 +234,8 @@ int main(int argc, char *argv[])
 	{
 		//showBitmap();
 		// load file into memory 
-		sprintf(&buffer[i],"./images/samplescreen%d.bmp",i);
+		sprintf(&buffer[i],"/home/pi/selim/bmp2fb/bmp2fb/images/samplescreen%d.bmp",i);
+		//printf("%s",buffer);
 		data[i] = load_file(buffer, &size);
 		// analyse the BMP 
 		code = bmp_analyse(&bmp, size, data[i]);
@@ -256,22 +257,22 @@ int main(int argc, char *argv[])
 		}
 		image = (uint8_t *) bmp.bitmap;
 		for (row = 0; row != bmp.height; row++) {
-			printf("row: %d",row);
+			//printf("row: %d",row);
 			for (col = 0; col != bmp.width; col++) {
-				printf("col: %d",col);
+			//	printf("col: %d",col);
 				size_t z = (row * bmp.width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
 				location = col*2+(row*finfo[i].line_length);			//her bir pixel 2 byte olduğu için col*2 yaptım.
 				*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
 			}
 		}
-		printf("P%d\n",i);
+	/*	printf("P%d\n",i);
 		printf("# width                %u \n", bmp.width);
 		printf("# height               %u \n", bmp.height);
 		printf("# size			%u\n", bmp.buffer_size);
 		printf("# bpp			%d\n", bmp.bpp);
 		printf("# Encoding		%d\n", bmp.encoding);
 		printf("%u %u 256\n", bmp.width, bmp.height);
-		printf("sizeof image: %d\n",image);
+		printf("sizeof image: %d\n",image);*/
 	}
 	
 	
@@ -288,7 +289,7 @@ cleanup:
 		munmap(fbp[i], screensize[i]); 
 		close(fbfd[i]);
 	}
-	printf("cikiliyor");
+	printf("cikiliyor\n");
 	return res;
 }
 
