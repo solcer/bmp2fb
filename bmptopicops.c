@@ -258,13 +258,15 @@ int main(int argc, char *argv[])
 		}
 		image = (uint8_t *) bmp[i].bitmap;
 	}
-		for (row = 0; row != bmp[i].height; row++) {
+		for (row = 0; row != bmp[0].height; row++) {
 			//printf("row: %d",row);
-			for (col = 0; col != bmp[i].width; col++) {
+			for (col = 0; col != bmp[0].width; col++) {
 			//	printf("col: %d",col);
-				size_t z = (row * bmp[i].width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
-				location = col*2+(row*finfo[i].line_length);			//her bir pixel 2 byte olduğu için col*2 yaptım.
-				*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
+				for(i=0;i<EKRANADEDI;i++){
+					size_t z = (row * bmp[i].width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
+					location = col*2+(row*finfo[i].line_length);			//her bir pixel 2 byte olduğu için col*2 yaptım.
+					*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
+				}
 			}
 		}
 	/*	printf("P%d\n",i);
