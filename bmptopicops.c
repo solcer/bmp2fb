@@ -261,7 +261,7 @@ int main(int argc, char *argv[])
 		
 		image = (uint8_t *) bmp.bitmap;
 		
-		printf("image alindi",);
+		printf("image alindi");
 		for (row = 0; row != bmp.height; row++) {
 			printf("row: %d",row);
 			for (col = 0; col != bmp.width; col++) {
