@@ -257,8 +257,6 @@ int main(int argc, char *argv[])
 		printf("%u %u 256\n", bmp.width, bmp.height);
 		printf("sizeof image: %d\n",image);
 		image = (uint8_t *) bmp.bitmap;
-		printf("sizeof image: %d\n", image);
-		printf("vay arkadaş ya");
 		printf("image alindi");
 		for (row = 0; row != bmp.height; row++) {
 			printf("row: %d",row);
