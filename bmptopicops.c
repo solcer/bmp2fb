@@ -118,10 +118,10 @@ int main(int argc, char *argv[])
 	  tty[i]=0;
 	  screensize[i]=0;
 	}
-	if (argc != 2) {
-		fprintf(stderr, "Usage: %s image.bmp\n", argv[0]);
-		return 1;
-	}
+//	if (argc != 2) {
+//		fprintf(stderr, "Usage: %s image.bmp\n", argv[0]);
+//		return 1;
+//	}
 	
 	if ((getuid ()) != 0) {
 
@@ -145,16 +145,15 @@ int main(int argc, char *argv[])
 			perror("Error: cannot open framebuffer device :" );
 			exit(1);
 		}
-		printf("The framebuffer %d  was opened successfully.\n",i);
+		//printf("The framebuffer %d  was opened successfully.\n",i);
 
 		if (ioctl(fbfd[i], FBIOPUT_CON2FBMAP, &c2m[i])) 			//framebufferı tty lere assign et
 		{
 			//fprintf(stderr, "%s: Cannot set console mapping\n", progname);
 			perror("Error: cannot assign framebuffer to tty device : " );
 			exit(1);
-			
 		}
-		printf("The framebuffer %d  was assigned successfully to tty%d.\n",i,i+10);
+		//printf("The framebuffer %d  was assigned successfully to tty%d.\n",i,i+10);
 
 
 		sprintf(&buffer[0],"/dev/tty%d",i+10);
@@ -179,14 +178,14 @@ int main(int argc, char *argv[])
 
 			exit(3);
 		}
-		printf("Variable screen information fb%d: %dx%d, %dbpp\n",i, vinfo[i].xres, vinfo[i].yres, vinfo[i].bits_per_pixel);
+		//printf("Variable screen information fb%d: %dx%d, %dbpp\n",i, vinfo[i].xres, vinfo[i].yres, vinfo[i].bits_per_pixel);
 
 
 		// Figure out the size of the screen in bytes
 
 		screensize[i] = vinfo[i].yres_virtual * finfo[i].line_length;
 
-		printf("screensize[%d]: %d\n",i,screensize[i]); 
+		//printf("screensize[%d]: %d\n",i,screensize[i]); 
 
 
 
@@ -203,7 +202,7 @@ int main(int argc, char *argv[])
 		exit(4);
 
 		}
-		printf("The framebuffer[%d] was mapped to memory successfully.\n",i);
+		//printf("The framebuffer[%d] was mapped to memory successfully.\n",i);
 
 
 	}
@@ -255,12 +254,11 @@ int main(int argc, char *argv[])
 		printf("# size			%u\n", bmp.buffer_size);
 		printf("# bpp			%d\n", bmp.bpp);
 		printf("# Encoding		%d\n", bmp.encoding);
-		
 		printf("%u %u 256\n", bmp.width, bmp.height);
-		
-		
+		printf("sizeof image: %d\n",image);
 		image = (uint8_t *) bmp.bitmap;
-		
+		printf("sizeof image: %d\n", image);
+		printf("vay arkadaş ya");
 		printf("image alindi");
 		for (row = 0; row != bmp.height; row++) {
 			printf("row: %d",row);
@@ -269,15 +267,13 @@ int main(int argc, char *argv[])
 				size_t z = (row * bmp.width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
 				location = col*2+(row*finfo[i].line_length);			//her bir pixel 2 byte olduğu için col*2 yaptım.
 				*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
-				
-			} 
+			}
 		}
 	}
 	
 	
 	
-		
-		
+	
 cleanup:
 	// clean up 
 	bmp_finalise(&bmp);
@@ -289,7 +285,7 @@ cleanup:
 		munmap(fbp[i], screensize[i]); 
 		close(fbfd[i]);
 	}
-
+	printf("cikiliyor");
 	return res;
 }
 
@@ -382,7 +378,4 @@ void bitmap_destroy(void *bitmap)
 	free(bitmap);
 }
 
-void showBitmap(uint8_t *resim, char *fbPointer)
-{
-	
-}
+
