@@ -257,7 +257,7 @@ int main(int argc, char *argv[])
 			}
 		}
 		image = (uint8_t *) bmp[i].bitmap;
-	}
+	
 		for (row = 0; row != bmp[0].height; row++) {
 			//printf("row: %d",row);
 			for (col = 0; col != bmp[0].width; col++) {
@@ -269,6 +269,7 @@ int main(int argc, char *argv[])
 				}
 			}
 		}
+	}
 	/*	printf("P%d\n",i);
 		printf("# width                %u \n", bmp.width);
 		printf("# height               %u \n", bmp.height);
