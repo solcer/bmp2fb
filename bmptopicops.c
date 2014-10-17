@@ -46,6 +46,7 @@ size_t bitmap_get_bpp(void *bitmap);
 void bitmap_destroy(void *bitmap);
 void showBitmap(uint8_t *resim, char *fbPointer);
 
+#define EKRANADEDI 6
 
 bmp_bitmap_callback_vt bitmap_callbacks = {
 	bitmap_create,
@@ -99,7 +100,7 @@ void perror_exit (char *error)
 
 }
 
-#define EKRANADEDI 6
+
 
 int main(int argc, char *argv[])
 {
