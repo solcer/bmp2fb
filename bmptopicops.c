@@ -55,7 +55,7 @@ bmp_bitmap_callback_vt bitmap_callbacks = {
 	bitmap_get_bpp
 };
 bmp_result code;
-bmp_image bmp;
+bmp_image bmp[EKRANADEDI];
 
 
 
@@ -228,24 +228,25 @@ int main(int argc, char *argv[])
                         }
                 }
         }
-	// create our bmp image 
-	bmp_create(&bmp, &bitmap_callbacks);
+	
 	for(i=0;i<EKRANADEDI;i++)
 	{
+		// create our bmp image 
+		bmp_create(&bmp[i], &bitmap_callbacks);
 		//showBitmap();
 		// load file into memory 
 		sprintf(&buffer[i],"/home/pi/selim/bmp2fb/bmp2fb/images/samplescreen%d.bmp",i);
 		//printf("%s",buffer);
 		data[i] = load_file(buffer, &size);
 		// analyse the BMP 
-		code = bmp_analyse(&bmp, size, data[i]);
+		code = bmp_analyse(&bmp[i], size, data[i]);
 		if (code != BMP_OK) {
 			warning("bmp_analyse", code);
 			res = 1;
 			goto cleanup;
 		}
 		// decode the image 
-		code = bmp_decode(&bmp);
+		code = bmp_decode(&bmp[i]);
 		// code = bmp_decode_trans(&bmp, TRANSPARENT_COLOR); 
 		if (code != BMP_OK) {
 			warning("bmp_decode", code);
@@ -255,12 +256,13 @@ int main(int argc, char *argv[])
 				goto cleanup;
 			}
 		}
-		image = (uint8_t *) bmp.bitmap;
-		for (row = 0; row != bmp.height; row++) {
+		image = (uint8_t *) bmp[i].bitmap;
+	}
+		for (row = 0; row != bmp[i].height; row++) {
 			//printf("row: %d",row);
-			for (col = 0; col != bmp.width; col++) {
+			for (col = 0; col != bmp[i].width; col++) {
 			//	printf("col: %d",col);
-				size_t z = (row * bmp.width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
+				size_t z = (row * bmp[i].width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
 				location = col*2+(row*finfo[i].line_length);			//her bir pixel 2 byte olduğu için col*2 yaptım.
 				*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
 			}
@@ -273,14 +275,14 @@ int main(int argc, char *argv[])
 		printf("# Encoding		%d\n", bmp.encoding);
 		printf("%u %u 256\n", bmp.width, bmp.height);
 		printf("sizeof image: %d\n",image);*/
-	}
+	
 	
 	
 	
 	
 cleanup:
 	// clean up 
-	bmp_finalise(&bmp);
+	bmp_finalise(&bmp[i]);
 	
 	
 	for(i=0;i<EKRANADEDI;i++)
