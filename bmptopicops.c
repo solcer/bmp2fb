@@ -243,16 +243,7 @@ int main(int argc, char *argv[])
 				goto cleanup;
 			}
 		}
-		printf("P%d\n",i);
-		printf("# width                %u \n", bmp.width);
-		printf("# height               %u \n", bmp.height);
-		printf("# size			%u\n", bmp.buffer_size);
-		printf("# bpp			%d\n", bmp.bpp);
-		printf("# Encoding		%d\n", bmp.encoding);
-		printf("%u %u 256\n", bmp.width, bmp.height);
-		printf("sizeof image: %d\n",image);
 		image = (uint8_t *) bmp.bitmap;
-		printf("image alindi");
 		for (row = 0; row != bmp.height; row++) {
 			printf("row: %d",row);
 			for (col = 0; col != bmp.width; col++) {
@@ -262,6 +253,14 @@ int main(int argc, char *argv[])
 				*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
 			}
 		}
+		printf("P%d\n",i);
+		printf("# width                %u \n", bmp.width);
+		printf("# height               %u \n", bmp.height);
+		printf("# size			%u\n", bmp.buffer_size);
+		printf("# bpp			%d\n", bmp.bpp);
+		printf("# Encoding		%d\n", bmp.encoding);
+		printf("%u %u 256\n", bmp.width, bmp.height);
+		printf("sizeof image: %d\n",image);
 	}
 	
 	
