@@ -46,6 +46,37 @@ size_t bitmap_get_bpp(void *bitmap);
 void bitmap_destroy(void *bitmap);
 void showBitmap(uint8_t *resim, char *fbPointer);
 
+
+bmp_bitmap_callback_vt bitmap_callbacks = {
+	bitmap_create,
+	bitmap_destroy,
+	bitmap_get_buffer,
+	bitmap_get_bpp
+};
+bmp_result code;
+bmp_image bmp;
+
+
+
+/* framebuffer */
+
+int fbfd[EKRANADEDI] , tty[EKRANADEDI] ;
+
+struct fb_var_screeninfo vinfo[EKRANADEDI];
+
+struct fb_fix_screeninfo finfo[EKRANADEDI];
+
+struct fb_con2fbmap c2m[EKRANADEDI];			//tty leri framebuffer a atamak için kullanılıyor
+
+long int screensize[EKRANADEDI] ;
+
+char *fbp[EKRANADEDI] ;
+
+uint8_t *image;
+
+unsigned char *data[EKRANADEDI];				//resim datasını içeren değişken
+
+
 void handler (int sig)
 
 {
@@ -72,32 +103,11 @@ void perror_exit (char *error)
 
 int main(int argc, char *argv[])
 {
-	bmp_bitmap_callback_vt bitmap_callbacks = {
-		bitmap_create,
-		bitmap_destroy,
-		bitmap_get_buffer,
-		bitmap_get_bpp
-	};
-	bmp_result code;
-	bmp_image bmp;
 	size_t size;
+	
 	unsigned short res = 0;
 	
-    	/* framebuffer */
-
-	int fbfd[EKRANADEDI] , tty[EKRANADEDI] ;
-
-    	struct fb_var_screeninfo vinfo[EKRANADEDI];
-
-    	struct fb_fix_screeninfo finfo[EKRANADEDI];
-
-	struct fb_con2fbmap c2m[EKRANADEDI];			//tty leri framebuffer a atamak için kullanılıyor
-	
-    	long int screensize[EKRANADEDI] ;
-
-    	char *fbp[EKRANADEDI] ;
-
-    	int x = 0, y = 0, i = 0;
+	int x = 0, y = 0, i = 0;
 
     	uint8_t pixel = 0;
 
@@ -106,10 +116,10 @@ int main(int argc, char *argv[])
     	long int location = 0;
 	
 	uint8_t buffer[10];
-	unsigned char *data[EKRANADEDI];				//resim datasını içeren değişken
+	
 
-	uint16_t row, col,pixelCounter=0;
-	uint8_t *image;
+	uint16_t row, col;
+	
 	
 	for(i=0;i<EKRANADEDI;i++)
 	{
