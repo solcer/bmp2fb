@@ -228,14 +228,14 @@ int main(int argc, char *argv[])
                         }
                 }
         }
-	
+
 	for(i=0;i<EKRANADEDI;i++)
 	{
 		// create our bmp image 
 		bmp_create(&bmp[i], &bitmap_callbacks);
 		//showBitmap();
 		// load file into memory 
-		sprintf(&buffer[i],"/home/pi/selim/bmp2fb/bmp2fb/images/samplescreen%d.bmp",i);
+		sprintf(&buffer[0],"/home/pi/selim/bmp2fb/images/samplescreen%d.bmp",i);
 		//printf("%s",buffer);
 		data[i] = load_file(buffer, &size);
 		// analyse the BMP 
@@ -256,12 +256,14 @@ int main(int argc, char *argv[])
 				goto cleanup;
 			}
 		}
+	}
+	for(i=0;i<EKRANADEDI;i++){
+		printf("%d. ekran ",i);
 		image = (uint8_t *) bmp[i].bitmap;
-	
-		for (row = 0; row != bmp[0].height; row++) {
+		for (row = 0; row != bmp[i].height; row++) {
 			//printf("row: %d",row);
-			for (col = 0; col != bmp[0].width; col++) {
-			//	printf("col: %d",col);
+			for (col = 0; col != bmp[i].width; col++) {
+				//printf("col: %d",col);
 				for(i=0;i<EKRANADEDI;i++){
 					size_t z = (row * bmp[i].width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
 					location = col*2+(row*finfo[i].line_length);			//her bir pixel 2 byte olduğu için col*2 yaptım.
