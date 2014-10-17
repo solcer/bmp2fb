@@ -187,10 +187,6 @@ int main(int argc, char *argv[])
 
 		//printf("screensize[%d]: %d\n",i,screensize[i]); 
 
-
-
-
-
 		// Map the device to memory
 
 		fbp[i] = (char *)mmap(0, screensize[i], PROT_READ | PROT_WRITE, MAP_SHARED, fbfd[i], 0);
@@ -221,7 +217,6 @@ int main(int argc, char *argv[])
                         }
                 }
         }
-
 	// create our bmp image 
 	bmp_create(&bmp, &bitmap_callbacks);
 	for(i=0;i<EKRANADEDI;i++)
