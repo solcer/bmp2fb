@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
 
         	exit(1);
 
-    	}
+    }
 
 	for(i=0;i<EKRANADEDI;i++)				//ekranları tty lere atayıp ram'de pointer a işaretliyor
 	{
@@ -213,21 +213,21 @@ int main(int argc, char *argv[])
 
 
 	}
-	 for(y=0;y<480;y++)
-        {
-                for(x=0;x<finfo[0].line_length;x++)
-                {
-                        //   pixel=0xf8;
-                        for(i=0;i<EKRANADEDI;i++)
-                        {
-                                location = x+(y*finfo[i].line_length);
-                                *((uint16_t*)(fbp[i] + location))=0xaaaa;
-                        //      *((uint8_t*)(fbp[i] + location+1)$
-                                // *((uint8_t*)(fbp[i] + location$
-                                //x+=2;
-                        }
-                }
-        }
+	for(y=0;y<480;y++)		//ekrani
+	{
+			for(x=0;x<finfo[0].line_length;x++)
+			{
+					//   pixel=0xf8;
+					for(i=0;i<EKRANADEDI;i++)
+					{
+							location = x+(y*finfo[i].line_length);
+							*((uint16_t*)(fbp[i] + location))=0xaaaa;
+					//      *((uint8_t*)(fbp[i] + location+1)$
+							// *((uint8_t*)(fbp[i] + location$
+							//x+=2;
+					}
+			}
+	}
 
 	for(i=0;i<EKRANADEDI;i++)
 	{
@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
 		bmp_create(&bmp[i], &bitmap_callbacks);
 		//showBitmap();
 		// load file into memory 
-		sprintf(&buffer[0],"/home/pi/selim/bmp2fb/images/samplescreen%d.bmp",i);
+		sprintf(&buffer[0],"/home/pi/selim/bmp2fb/images/v0/samplescreen%d.bmp",i,i);
 		//printf("%s",buffer);
 		data[i] = load_file(buffer, &size);
 		// analyse the BMP 
