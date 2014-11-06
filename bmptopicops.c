@@ -6,13 +6,7 @@
  * Licenced under the MIT License,
  *                http://www.opensource.org/licenses/mit-license.php
  */
-<<<<<<< HEAD
- 
 
-=======
-
- 
->>>>>>> 9767ef8b15920db63dc95e1c7a26dab491c1c946
 //selim Ölçer 14/10/2014 bmp to framebuffer
 #include <assert.h>
 #include <errno.h>

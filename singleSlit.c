@@ -1,4 +1,4 @@
-/* test
+/* tesst notepad+++
  * Copyright 2008 Sean Fox <dyntryx@gmail.com>
  * Copyright 2008 James Bursa <james@netsurf-browser.org>
  *
@@ -46,7 +46,7 @@ size_t bitmap_get_bpp(void *bitmap);
 void bitmap_destroy(void *bitmap);
 void showBitmap(uint8_t *resim, char *fbPointer);
 
-#define EKRANADEDI 1
+#define EKRANADEDI 6
 
 bmp_bitmap_callback_vt bitmap_callbacks = {
 	bitmap_create,
@@ -213,7 +213,7 @@ int main(int argc, char *argv[])
 
 
 	}
-	for(y=0;y<480;y++)		//ekrani
+	for(y=0;y<480;y++)		//ekrani temizliyor
 	{
 			for(x=0;x<finfo[0].line_length;x++)
 			{
@@ -221,7 +221,7 @@ int main(int argc, char *argv[])
 					for(i=0;i<EKRANADEDI;i++)
 					{
 							location = x+(y*finfo[i].line_length);
-							*((uint16_t*)(fbp[i] + location))=0xaaaa;
+							*((uint16_t*)(fbp[i] + location))=0x0;
 					//      *((uint8_t*)(fbp[i] + location+1)$
 							// *((uint8_t*)(fbp[i] + location$
 							//x+=2;
@@ -229,7 +229,7 @@ int main(int argc, char *argv[])
 			}
 	}
 
-	for(i=0;i<EKRANADEDI;i++)
+	for(i=0;i<EKRANADEDI;i++)			//resimlerin datasını çıkarıyor
 	{
 		// create our bmp image 
 		bmp_create(&bmp[i], &bitmap_callbacks);
@@ -257,21 +257,20 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
-	//for(i=0;i<EKRANADEDI;i++){
-		//printf("%d. ekran ",i);
-		//image = (uint8_t *) bmp[i].bitmap;
-		for (row = 0; row != bmp[0].height; row++) {
-			//printf("row: %d",row);
+	/*for (row = 0; row != bmp[0].height; row++) {
 			for (col = 0; col != bmp[0].width; col++) {
-				for(i=0;i<EKRANADEDI;i++){
-		               		image = (uint8_t *) bmp[i].bitmap;
-					//printf("col: %d",col);
-					size_t z = (row * bmp[i].width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
-					location = col*2+(row*finfo[i].line_length);			//her bir pixel 2 byte olduğu için col*2 yaptım.
-					*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
-				}
+				for(i=0;i<EKRANADEDI;i++){*/
+	for (row = 130; row != 143; row++) {
+		for (col = 0; col != bmp[0].width; col++) {
+			for(i=0;i<1;i++){
+						image = (uint8_t *) bmp[i].bitmap;
+				//printf("col: %d",col);
+				size_t z = (row * bmp[i].width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
+				location = col*2+(row*finfo[i].line_length);			//her bir pixel 2 byte olduğu için col*2 yaptım.
+				*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
 			}
 		}
+	}
 	//}
 
 	/*	printf("P%d\n",i);
