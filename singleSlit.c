@@ -1,4 +1,4 @@
-/*
+/* test
  * Copyright 2008 Sean Fox <dyntryx@gmail.com>
  * Copyright 2008 James Bursa <james@netsurf-browser.org>
  *
