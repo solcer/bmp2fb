@@ -6,13 +6,8 @@
  * Licenced under the MIT License,
  *                http://www.opensource.org/licenses/mit-license.php
  */
-<<<<<<< HEAD
- 
-
-=======
 
  
->>>>>>> 9767ef8b15920db63dc95e1c7a26dab491c1c946
 //selim Ölçer 14/10/2014 bmp to framebuffer
 #include <assert.h>
 #include <errno.h>
@@ -51,7 +46,7 @@ size_t bitmap_get_bpp(void *bitmap);
 void bitmap_destroy(void *bitmap);
 void showBitmap(uint8_t *resim, char *fbPointer);
 
-#define EKRANADEDI 6
+#define EKRANADEDI 1
 
 bmp_bitmap_callback_vt bitmap_callbacks = {
 	bitmap_create,
@@ -115,7 +110,7 @@ int main(int argc, char *argv[])
 	
 	int x = 0, y = 0, i = 0;
 
-    	uint8_t pixel = 0,dondurt=0;
+    	uint8_t pixel = 0;
 
     	bool stripe = true;
 
@@ -145,7 +140,7 @@ int main(int argc, char *argv[])
 
         	exit(1);
 
-    	}
+    }
 
 	for(i=0;i<EKRANADEDI;i++)				//ekranları tty lere atayıp ram'de pointer a işaretliyor
 	{
@@ -218,29 +213,29 @@ int main(int argc, char *argv[])
 
 
 	}
-	 for(y=0;y<480;y++)
-        {
-                for(x=0;x<finfo[0].line_length;x++)
-                {
-                        //   pixel=0xf8;
-                        for(i=0;i<EKRANADEDI;i++)
-                        {
-                                location = x+(y*finfo[i].line_length);
-                                *((uint16_t*)(fbp[i] + location))=0xaaaa;
-                        //      *((uint8_t*)(fbp[i] + location+1)$
-                                // *((uint8_t*)(fbp[i] + location$
-                                //x+=2;
-                        }
-                }
-        }
-dondur:
+	for(y=0;y<480;y++)		//ekrani
+	{
+			for(x=0;x<finfo[0].line_length;x++)
+			{
+					//   pixel=0xf8;
+					for(i=0;i<EKRANADEDI;i++)
+					{
+							location = x+(y*finfo[i].line_length);
+							*((uint16_t*)(fbp[i] + location))=0xaaaa;
+					//      *((uint8_t*)(fbp[i] + location+1)$
+							// *((uint8_t*)(fbp[i] + location$
+							//x+=2;
+					}
+			}
+	}
+
 	for(i=0;i<EKRANADEDI;i++)
 	{
 		// create our bmp image 
 		bmp_create(&bmp[i], &bitmap_callbacks);
 		//showBitmap();
 		// load file into memory 
-		sprintf(&buffer[0],"/home/pi/selim/bmp2fb/images/v%d/samplescreen%d.bmp",dondurt,i);
+		sprintf(&buffer[0],"/home/pi/selim/bmp2fb/images/v0/samplescreen%d.bmp",i,i);
 		//printf("%s",buffer);
 		data[i] = load_file(buffer, &size);
 		// analyse the BMP 
@@ -250,7 +245,7 @@ dondur:
 			res = 1;
 			goto cleanup;
 		}
-		// decode the image
+		// decode the image 
 		code = bmp_decode(&bmp[i]);
 		// code = bmp_decode_trans(&bmp, TRANSPARENT_COLOR); 
 		if (code != BMP_OK) {
@@ -277,9 +272,6 @@ dondur:
 				}
 			}
 		}
-/*	dondurt++;
-	if(dondurt==9) dondurt=0;
-	goto dondur;*/
 	//}
 
 	/*	printf("P%d\n",i);
@@ -290,28 +282,23 @@ dondur:
 		printf("# Encoding		%d\n", bmp.encoding);
 		printf("%u %u 256\n", bmp.width, bmp.height);
 		printf("sizeof image: %d\n",image);*/
-
+	
+	
+	
+	
+	
 cleanup:
 	// clean up 
 	bmp_finalise(&bmp[i]);
- 
-
+	
+	
 	for(i=0;i<EKRANADEDI;i++)
 	{
 		free(data[i]);
-	//	munmap(fbp[i], screensize[i]); 
-	//	close(fbfd[i]);
+		munmap(fbp[i], screensize[i]); 
+		close(fbfd[i]);
 	}
-	printf("donuyor\n");
-	 dondurt++;
-        if(dondurt==9) dondurt=0;
-        goto dondur;
-	 for(i=0;i<EKRANADEDI;i++)
-        {
-	 	munmap(fbp[i], screensize[i]); 
-         	close(fbfd[i]);
-	}
-
+	printf("cikiliyor\n");
 	return res;
 }
 
