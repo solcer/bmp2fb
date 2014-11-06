@@ -18,7 +18,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include "libnsbmp.c"
-
+#include <wiringPi.h>
 
 #include <unistd.h>
 
@@ -136,6 +136,9 @@ int main(int argc, char *argv[])
 //		return 1;
 //	}
 	
+	wiringPiSetup(); // Initializes wiringPi using wiringPi's simlified number system.
+	wiringPiSetupGpio(); // Initializes wiringPi using the Broadcom GPIO pin numbers
+	pinMode(17, INPUT);
 	if ((getuid ()) != 0) {
 
         	printf ("You are not root, run this as root or sudo\n");
@@ -237,7 +240,8 @@ int main(int argc, char *argv[])
 		bmp_create(&bmp[i], &bitmap_callbacks);
 		//showBitmap();
 		// load file into memory 
-		sprintf(&buffer[0],"/home/pi/selim/bmp2fb/images/v0/samplescreen%d.bmp",i,i);
+		//sprintf(&buffer[0],"/home/pi/selim/bmp2fb/images/v0/samplescreen%d.bmp",i,i);
+		sprintf(&buffer[0],"/home/pi/selim/bmp2fb/colorChart.bmp",i,i);
 		//printf("%s",buffer);
 		data[i] = load_file(buffer, &size);
 		// analyse the BMP 
@@ -273,6 +277,21 @@ int main(int argc, char *argv[])
 					size_t z = (row * bmp[i].width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
 					location = col*2+(row*finfo[i].line_length);			//her bir pixel 2 byte olduğu için col*2 yaptım.
 					*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
+				}
+			}
+		}
+		while(digitalRead(17));
+		sleep(0.1);
+		while(digitalRead(17)==0);
+		sleep(0.1);
+		for (row = slitNo*SLITSIZE; row < slitNo*SLITSIZE + SLITSIZE; row++) {
+			for (col = 0; col != bmp[0].width; col++) {
+				for(i=0;i<1;i++){
+							image = (uint8_t *) bmp[i].bitmap;
+					//printf("col: %d",col);
+					size_t z = (row * bmp[i].width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
+					location = col*2+(row*finfo[i].line_length);			//her bir pixel 2 byte olduğu için col*2 yaptım.
+					*((uint16_t*)(fbp[i] + location)) = 0;
 				}
 			}
 		}
