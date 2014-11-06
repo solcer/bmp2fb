@@ -6,7 +6,7 @@
  * Licenced under the MIT License,
  *                http://www.opensource.org/licenses/mit-license.php
  */
-
+ 
 
 //selim Ölçer 14/10/2014 bmp to framebuffer
 #include <assert.h>
