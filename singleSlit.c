@@ -271,7 +271,7 @@ int main(int argc, char *argv[])
 		printf("slitNo:%d\n",slitNo);
 		for (row = slitNo*SLITSIZE; row < slitNo*SLITSIZE + SLITSIZE; row++) {
 			for (col = 0; col != bmp[0].width; col++) {
-				for(i=0;i<1;i++){
+				for(i=0;i<EKRANADEDI;i++){
 							image = (uint8_t *) bmp[i].bitmap;
 					//printf("col: %d",col);
 					size_t z = (row * bmp[i].width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
@@ -286,7 +286,7 @@ int main(int argc, char *argv[])
 		sleep(0.1);
 		for (row = slitNo*SLITSIZE; row < slitNo*SLITSIZE + SLITSIZE; row++) {
 			for (col = 0; col != bmp[0].width; col++) {
-				for(i=0;i<1;i++){
+				for(i=0;i<EKRANADEDI;i++){
 							image = (uint8_t *) bmp[i].bitmap;
 					//printf("col: %d",col);
 					size_t z = (row * bmp[i].width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
