@@ -48,7 +48,7 @@ void bitmap_destroy(void *bitmap);
 void showBitmap(uint8_t *resim, char *fbPointer);
 //void fillSlit(unsigned char slit, unsigned char *dt,unsigned int topOffset, unsigned int bottomOffset);
 void fillSlit(unsigned char slit,unsigned int topOffset, unsigned int bottomOffset);
-#define EKRANADEDI 6
+#define EKRANADEDI 8
 #define SLITSIZE	13
 
 bmp_bitmap_callback_vt bitmap_callbacks = {
@@ -160,6 +160,7 @@ int main(int argc, char *argv[])
 		fbfd[i] = open(buffer, O_RDWR);	//framebuffer ı açıyoru
 		if (fbfd[i] == -1) 			//hata geldi mi?
 		{
+			printf("acilamayan device no:%d",i);
 			perror("Error: cannot open framebuffer device :" );
 			exit(1);
 		}
