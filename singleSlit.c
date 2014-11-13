@@ -5,6 +5,7 @@
  * This file is part of NetSurf's libnsbmp, http://www.netsurf-browser.org/
  * Licenced under the MIT License,
  *                http://www.opensource.org/licenses/mit-license.php
+ * compile etmek icin:  sudo cc singleSlit.c -o singleSlit -lwiringPi
  */
 
  
@@ -45,7 +46,8 @@ unsigned char *bitmap_get_buffer(void *bitmap);
 size_t bitmap_get_bpp(void *bitmap);
 void bitmap_destroy(void *bitmap);
 void showBitmap(uint8_t *resim, char *fbPointer);
-
+//void fillSlit(unsigned char slit, unsigned char *dt,unsigned int topOffset, unsigned int bottomOffset);
+void fillSlit(unsigned char slit,unsigned int topOffset, unsigned int bottomOffset);
 #define EKRANADEDI 6
 #define SLITSIZE	13
 
@@ -263,14 +265,21 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
+	
+	do{
+	fillSlit(8,0, 100);
+	sleep(1.1);
+	fillSlit(10,100, 0);
+	sleep(1.1);
+	}while(digitalRead(17));
 	/*for (row = 0; row != bmp[0].height; row++) {
 			for (col = 0; col != bmp[0].width; col++) {
 				for(i=0;i<EKRANADEDI;i++){*/
-	for(slitNo=0;slitNo<36;slitNo++)
+	/*for(slitNo=0;slitNo<36;slitNo++)
 	{
 		printf("slitNo:%d\n",slitNo);
 		for (row = slitNo*SLITSIZE; row < slitNo*SLITSIZE + SLITSIZE; row++) {
-			for (col = 0; col != bmp[0].width; col++) {
+			for (col = 150; col != bmp[0].width-150; col++) {
 				for(i=0;i<EKRANADEDI;i++){
 							image = (uint8_t *) bmp[i].bitmap;
 					//printf("col: %d",col);
@@ -284,6 +293,7 @@ int main(int argc, char *argv[])
 		sleep(0.1);
 		while(digitalRead(17)==0);
 		sleep(0.1);
+		// kullanılmayan slitleri sifirliyorum.
 		for (row = slitNo*SLITSIZE; row < slitNo*SLITSIZE + SLITSIZE; row++) {
 			for (col = 0; col != bmp[0].width; col++) {
 				for(i=0;i<EKRANADEDI;i++){
@@ -295,26 +305,10 @@ int main(int argc, char *argv[])
 				}
 			}
 		}
-	}
-
-	/*	printf("P%d\n",i);
-		printf("# width                %u \n", bmp.width);
-		printf("# height               %u \n", bmp.height);
-		printf("# size			%u\n", bmp.buffer_size);
-		printf("# bpp			%d\n", bmp.bpp);
-		printf("# Encoding		%d\n", bmp.encoding);
-		printf("%u %u 256\n", bmp.width, bmp.height);
-		printf("sizeof image: %d\n",image);*/
-	
-	
-	
-	
-	
+	}*/	
 cleanup:
 	// clean up 
 	bmp_finalise(&bmp[i]);
-	
-	
 	for(i=0;i<EKRANADEDI;i++)
 	{
 		free(data[i]);
@@ -415,3 +409,39 @@ void bitmap_destroy(void *bitmap)
 }
 
 
+//void fillSlit(unsigned char slit, unsigned char *dt,unsigned int topOffset, unsigned int bottomOffset)
+void fillSlit(unsigned char slit,unsigned int topOffset, unsigned int bottomOffset)
+{
+unsigned int row,col;
+unsigned char i;
+long int location = 0;
+static unsigned char oncekiSlit=0;
+	printf("slit:%d\n",slit);
+	/*ilk önce bir önce hazirlanan slitlerin icerigini temizliyorum*/
+	/*****************************************************************/
+	for (row = oncekiSlit*SLITSIZE; row < oncekiSlit*SLITSIZE + SLITSIZE; row++) {
+		for (col = 0; col != bmp[0].width; col++) {
+			for(i=0;i<EKRANADEDI;i++){		
+				location = col*2+(row*finfo[i].line_length);			//her bir pixel 2 byte olduğu için col*2 yaptım.
+				*((uint16_t*)(fbp[i] + location)) = 0;
+			}
+		}
+	}
+	oncekiSlit=slit;				//Bir sonraki adimda onceki slit icerigini silme icin guncellenen slit numarasini oncekiSlit'e yaziyorum
+	/*****************************************************************/
+	
+	/*sonra istenilen sliti guncelliyorum*/
+	/*****************************************************************/
+	for (row = slit*SLITSIZE; row < slit*SLITSIZE + SLITSIZE; row++) {
+		for(i=0;i<EKRANADEDI;i++){
+			//buraya her bir projektor icin onceden belirlenmis offset degerini bir dosyadan okuyarak offset olarak yazacagim.
+			for (col = bottomOffset; col != bmp[0].width-topOffset; col++) {
+				image = (uint8_t *) bmp[i].bitmap;
+				size_t z = (row * bmp[i].width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
+				location = col*2+(row*finfo[i].line_length);			//her bir pixel 2 byte olduğu için col*2 yaptım.
+				*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
+			}
+		}
+	}
+	/*****************************************************************/
+}
