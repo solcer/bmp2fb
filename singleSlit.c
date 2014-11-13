@@ -266,13 +266,16 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
-	
+	slitNo=0;
 	do{
-	fillSlit(8,0,0);
-	sleep(1.1);
-	fillSlit(10,0, 0);
-	sleep(1.1);
-	}while(digitalRead(17));
+	fillSlit(slitNo,0,0);
+	//sleep(1.1);
+	//fillSlit(slitNo+2,0, 0);
+	//sleep(1.1);
+	slitNo++;
+	slitNo=slitNo%36;
+	while(digitalRead(17));
+	}while(1);
 	/*for (row = 0; row != bmp[0].height; row++) {
 			for (col = 0; col != bmp[0].width; col++) {
 				for(i=0;i<EKRANADEDI;i++){*/
@@ -428,12 +431,32 @@ static unsigned char oncekiSlit=0;
 			}
 		}
 	}
+	/*2. sliti siliyor*/
+	for (row = (oncekiSlit+2)*SLITSIZE; row < (oncekiSlit+2)*SLITSIZE + SLITSIZE; row++) {
+		for (col = 0; col != bmp[0].width; col++) {
+			for(i=0;i<EKRANADEDI;i++){		
+				location = col*2+(row*finfo[i].line_length);			//her bir pixel 2 byte olduğu için col*2 yaptım.
+				*((uint16_t*)(fbp[i] + location)) = 0;
+			}
+		}
+	}
 	oncekiSlit=slit;				//Bir sonraki adimda onceki slit icerigini silme icin guncellenen slit numarasini oncekiSlit'e yaziyorum
 	/*****************************************************************/
 	
 	/*sonra istenilen sliti guncelliyorum*/
 	/*****************************************************************/
 	for (row = slit*SLITSIZE; row < slit*SLITSIZE + SLITSIZE; row++) {
+		for(i=0;i<EKRANADEDI;i++){
+			//buraya her bir projektor icin onceden belirlenmis offset degerini bir dosyadan okuyarak offset olarak yazacagim.
+			for (col = bottomOffset; col != bmp[0].width-topOffset; col++) {
+				image = (uint8_t *) bmp[i].bitmap;
+				size_t z = (row * bmp[i].width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
+				location = col*2+(row*finfo[i].line_length);			//her bir pixel 2 byte olduğu için col*2 yaptım.
+				*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
+			}
+		}
+	}
+	for (row = (slit+2)*SLITSIZE; row < (slit+2)*SLITSIZE + SLITSIZE; row++) {
 		for(i=0;i<EKRANADEDI;i++){
 			//buraya her bir projektor icin onceden belirlenmis offset degerini bir dosyadan okuyarak offset olarak yazacagim.
 			for (col = bottomOffset; col != bmp[0].width-topOffset; col++) {

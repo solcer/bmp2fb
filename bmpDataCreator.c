@@ -10,6 +10,8 @@
 
  
 //selim Ölçer 14/10/2014 bmp to framebuffer
+//bmpDataCreator.c 13.11.2014
+
 #include <assert.h>
 #include <errno.h>
 #include <stdbool.h>
