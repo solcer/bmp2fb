@@ -35,10 +35,11 @@
 
 #include <linux/kd.h>
 
-#include "uart.c" 
+//#include "rs232.h" 
+#include "rs232.c" 
 
-extern void setupUART(int *);
-extern void receiveByte(int * );
+
+
 #define BYTES_PER_PIXEL 4
 #define TRANSPARENT_COLOR 0xffffffff
 
@@ -52,7 +53,9 @@ void bitmap_destroy(void *bitmap);
 void showBitmap(uint8_t *resim, char *fbPointer);
 //void fillSlit(unsigned char slit, unsigned char *dt,unsigned int topOffset, unsigned int bottomOffset);
 void fillSlit(unsigned char slit,unsigned int topOffset, unsigned int bottomOffset);
-#define EKRANADEDI 17
+
+
+#define EKRANADEDI 	17
 #define SLITSIZE	13
 
 bmp_bitmap_callback_vt bitmap_callbacks = {
@@ -115,7 +118,7 @@ int main(int argc, char *argv[])
 	
 	unsigned short res = 0;
 	
-	int x = 0, y = 0, i = 0;
+	int x = 0, y = 0, i = 0,n;
 
 	uint8_t pixel = 0;
 
@@ -129,9 +132,39 @@ int main(int argc, char *argv[])
 	uint16_t row, col;
 		
 	unsigned char slitNo=0;
-	setupUART(&uartFileStream);	
-	printf("uartFileStream donus degeri: %d\n",uartFileStream);
-	receiveByte(&uartFileStream);
+	int cport_nr=22;        /* /dev/ttyS0 (COM1 on windows) */
+   	int bdrate=9600;       /* 9600 baud */
+	unsigned char uartBuf[4096];
+	char mode[]={'8','N','1',0};
+
+	if(RS232_OpenComport(cport_nr, bdrate, mode))
+	{
+		printf("Can not open comport\n");
+		return(0);
+	}
+/*	  while(1)
+	  {
+		n = RS232_PollComport(cport_nr, uartBuf, 40);
+
+		if(n > 0)
+		{
+		  uartBuf[n] = 0;   // always put a "null" at the end of a string! 
+
+		  for(i=0; i < n; i++)
+		  {
+			if(uartBuf[i] < 32)  // replace unreadable control-codes by dots 
+			{
+			  uartBuf[i] = '.';
+			}
+		  }
+
+		  printf("received %i bytes: %s\n", n, (char *)uartBuf);
+		}
+
+		usleep(100000);  // sleep for 100 milliSeconds 
+
+	  }*/
+	  //RS232_cputs(cport_nr, str[i]);
 	for(i=0;i<EKRANADEDI;i++)
 	{
 	  fbp[i]=0;
