@@ -48,7 +48,7 @@ void bitmap_destroy(void *bitmap);
 void showBitmap(uint8_t *resim, char *fbPointer);
 //void fillSlit(unsigned char slit, unsigned char *dt,unsigned int topOffset, unsigned int bottomOffset);
 void fillSlit(unsigned char slit,unsigned int topOffset, unsigned int bottomOffset);
-#define EKRANADEDI 8
+#define EKRANADEDI 5
 #define SLITSIZE	13
 
 bmp_bitmap_callback_vt bitmap_callbacks = {
@@ -244,8 +244,8 @@ int main(int argc, char *argv[])
 		//showBitmap();
 		// load file into memory 
 		//sprintf(&buffer[0],"/home/pi/selim/bmp2fb/images/v0/samplescreen%d.bmp",i,i);
-		sprintf(&buffer[0],"/home/pi/selim/bmp2fb/colorChart.bmp",i,i);
-		//sprintf(&buffer[0],"/home/pi/selim/bmp2fb/samplescreen0.bmp",i,i);
+		//sprintf(&buffer[0],"/home/pi/selim/bmp2fb/colorChart.bmp",i,i);
+		sprintf(&buffer[0],"/home/pi/selim/bmp2fb/samplescreen0.bmp",i,i);
 		//printf("%s",buffer);
 		data[i] = load_file(buffer, &size);
 		// analyse the BMP 
@@ -275,7 +275,7 @@ int main(int argc, char *argv[])
 	//sleep(1.1);
 	slitNo++;
 	slitNo=slitNo%36;
-	while(digitalRead(17));
+//	while(digitalRead(17));
 	}while(1);
 	/*for (row = 0; row != bmp[0].height; row++) {
 			for (col = 0; col != bmp[0].width; col++) {
@@ -421,7 +421,7 @@ unsigned int row,col;
 unsigned char i;
 long int location = 0;
 static unsigned char oncekiSlit=0;
-	printf("slit:%d\n",slit);
+//	printf("slit:%d\n",slit);
 	/*ilk önce bir önce hazirlanan slitlerin icerigini temizliyorum*/
 	/*****************************************************************/
 	for (row = oncekiSlit*SLITSIZE; row < oncekiSlit*SLITSIZE + SLITSIZE; row++) {
@@ -443,7 +443,7 @@ static unsigned char oncekiSlit=0;
 	}
 	oncekiSlit=slit;				//Bir sonraki adimda onceki slit icerigini silme icin guncellenen slit numarasini oncekiSlit'e yaziyorum
 	/*****************************************************************/
-	
+
 	/*sonra istenilen sliti guncelliyorum*/
 	/*****************************************************************/
 	for (row = slit*SLITSIZE; row < slit*SLITSIZE + SLITSIZE; row++) {

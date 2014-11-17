@@ -45,7 +45,7 @@ size_t bitmap_get_bpp(void *bitmap);
 void bitmap_destroy(void *bitmap);
 void showBitmap(uint8_t *resim, char *fbPointer);
 
-#define EKRANADEDI 6
+#define EKRANADEDI 3
 
 bmp_bitmap_callback_vt bitmap_callbacks = {
 	bitmap_create,
@@ -296,7 +296,7 @@ cleanup:
 	//	munmap(fbp[i], screensize[i]); 
 	//	close(fbfd[i]);
 	}
-	printf("donuyor\n");
+	//printf("donuyor\n");
 	 dondurt++;
         if(dondurt==9) dondurt=0;
         goto dondur;

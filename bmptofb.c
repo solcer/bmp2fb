@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
 	bmp_image bmp;
 	size_t size;
 	unsigned short res = 0;
-	
+	unsigned char yazi[20];
     	/* framebuffer */
 
 	int fbfd=0 , tty = 0;;
@@ -102,8 +102,8 @@ int main(int argc, char *argv[])
 
     	long int location = 0;
 
-	if (argc != 2) {
-		fprintf(stderr, "Usage: %s image.bmp\n", argv[0]);
+	if (argc != 3) {
+		fprintf(stderr, "Usage: %s image.bmp fbX\n", argv[0]);
 		return 1;
 	}
 	
@@ -115,8 +115,8 @@ int main(int argc, char *argv[])
 
     	}
 
-
-	fbfd = open("/dev/fb0", O_RDWR);
+	sprintf(&yazi[0],"/dev/%s",argv[2]);
+	fbfd = open(yazi, O_RDWR);
 	if (fbfd == -1) 
 	{
 	      perror("Error: cannot open framebuffer device");

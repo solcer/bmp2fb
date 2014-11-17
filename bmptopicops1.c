@@ -68,7 +68,7 @@ void perror_exit (char *error)
 
 }
 
-#define EKRANADEDI 6
+#define EKRANADEDI 3
 
 int main(int argc, char *argv[])
 {
