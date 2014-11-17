@@ -35,6 +35,10 @@
 
 #include <linux/kd.h>
 
+#include "uart.c" 
+
+extern void setupUART(int *);
+extern void receiveByte(int * );
 #define BYTES_PER_PIXEL 4
 #define TRANSPARENT_COLOR 0xffffffff
 
@@ -48,7 +52,7 @@ void bitmap_destroy(void *bitmap);
 void showBitmap(uint8_t *resim, char *fbPointer);
 //void fillSlit(unsigned char slit, unsigned char *dt,unsigned int topOffset, unsigned int bottomOffset);
 void fillSlit(unsigned char slit,unsigned int topOffset, unsigned int bottomOffset);
-#define EKRANADEDI 5
+#define EKRANADEDI 17
 #define SLITSIZE	13
 
 bmp_bitmap_callback_vt bitmap_callbacks = {
@@ -79,7 +83,7 @@ char *fbp[EKRANADEDI] ;
 uint8_t *image;
 
 unsigned char *data[EKRANADEDI];				//resim datasını içeren değişken
-
+int uartFileStream = -1;
 
 void handler (int sig)
 
@@ -125,7 +129,9 @@ int main(int argc, char *argv[])
 	uint16_t row, col;
 		
 	unsigned char slitNo=0;
-	
+	setupUART(&uartFileStream);	
+	printf("uartFileStream donus degeri: %d\n",uartFileStream);
+	receiveByte(&uartFileStream);
 	for(i=0;i<EKRANADEDI;i++)
 	{
 	  fbp[i]=0;
@@ -156,7 +162,7 @@ int main(int argc, char *argv[])
 		c2m[i].console = (uint32_t) 10+i;			//framebuffer a atanacak consol numarası
 		c2m[i].framebuffer = (uint32_t) i;		//framebuffer numarası
 
-		sprintf(&buffer[0],"/dev/fb%d",i);
+		sprintf(&buffer[0],"/dev/fb%d",i); 
 		fbfd[i] = open(buffer, O_RDWR);	//framebuffer ı açıyoru
 		if (fbfd[i] == -1) 			//hata geldi mi?
 		{
@@ -189,7 +195,7 @@ int main(int argc, char *argv[])
 			exit(2);
 
 		}
-
+tekrarOlc:			//ekran çözünürlüğü tutmuyorsa ayarlayıp tekrar buraya gelecek
 		// Get variable screen information
 		if (ioctl(fbfd[i], FBIOGET_VSCREENINFO, &vinfo[i]) == -1) {
 
@@ -197,8 +203,14 @@ int main(int argc, char *argv[])
 
 			exit(3);
 		}
-		//printf("Variable screen information fb%d: %dx%d, %dbpp\n",i, vinfo[i].xres, vinfo[i].yres, vinfo[i].bits_per_pixel);
-
+		printf("%d. Variable screen information fb%d: %dx%d, %dbpp\n",i,i, vinfo[i].xres, vinfo[i].yres, vinfo[i].bits_per_pixel);
+		if(vinfo[i].xres!=848)		//eger resolution tutmuyorsa ayarla
+		{
+			printf("fb%d resolution yanlis. Duzeltiliyor...\n",i);
+			sprintf(&buffer[0],"sudo fbset -fb /dev/fb%d 848x480-60",i);
+			res = system(buffer);
+			goto tekrarOlc;
+		}
 
 		// Figure out the size of the screen in bytes
 
@@ -229,7 +241,7 @@ int main(int argc, char *argv[])
 					for(i=0;i<EKRANADEDI;i++)
 					{
 							location = x+(y*finfo[i].line_length);
-							*((uint16_t*)(fbp[i] + location))=0x0;
+							*((uint16_t*)(fbp[i] + location))=0x10;
 					//      *((uint8_t*)(fbp[i] + location+1)$
 							// *((uint8_t*)(fbp[i] + location$
 							//x+=2;
@@ -268,7 +280,8 @@ int main(int argc, char *argv[])
 		}
 	}
 	slitNo=0;
-	do{
+	fillSlit(20,0,0);
+	/*do{
 	fillSlit(slitNo,0,0);
 	//sleep(1.1);
 	//fillSlit(slitNo+2,0, 0);
@@ -276,7 +289,7 @@ int main(int argc, char *argv[])
 	slitNo++;
 	slitNo=slitNo%36;
 //	while(digitalRead(17));
-	}while(1);
+	}while(1);*/
 	/*for (row = 0; row != bmp[0].height; row++) {
 			for (col = 0; col != bmp[0].width; col++) {
 				for(i=0;i<EKRANADEDI;i++){*/
@@ -320,6 +333,7 @@ cleanup:
 		munmap(fbp[i], screensize[i]); 
 		close(fbfd[i]);
 	}
+	close(uartFileStream);
 	printf("cikiliyor\n");
 	return res;
 }

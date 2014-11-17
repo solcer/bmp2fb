@@ -101,8 +101,8 @@ int main(int argc, char *argv[])
     	bool stripe = true;
 
     	long int location = 0;
-
-	if (argc != 3) {
+	printf("1:%s, 2:%s, 3:%s 4:%s\n",argv[0],argv[1],argv[2],argv[3]);
+	if (argc < 3) {
 		fprintf(stderr, "Usage: %s image.bmp fbX\n", argv[0]);
 		return 1;
 	}
@@ -282,19 +282,34 @@ int main(int argc, char *argv[])
 		switch(vinfo.bits_per_pixel)
 		{
 		  case 16:						//ekran çözünürlüğü 16bpp ise
-		    //printf("Ekran 16bpp\n");
+		    printf("Ekran 16bpp\n");
 		    if(bmp.bpp==16){					//resim çözünülüğü 16bpp mi?
-		      for (row = 0; row != bmp.height; row++) {
-			      for (col = 0; col != bmp.width; col++) {
-				      size_t z = (row * bmp.width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
-				      //printf("byte %d %d %d**  \n",	image[z],image[z + 1],image[z + 2]);
-				      location = col*2+(row*finfo.line_length);			//her bir pixel 2 byte olduğu için col*2 yaptım.
-				      *((uint16_t*)(fbp + location)) = image[z]<<8|image[z+1]<<3|image[z+2]>>3;		//ram'e datayı yazıyorum.
-			      } 
-		      }
+				printf("size argvc:%d, argv[3]",argc,argv[3]);
+				if(argc<4) 
+				{ 
+					printf ("clear yok");
+					for (row = 0; row != bmp.height; row++) {
+						for (col = 0; col != bmp.width; col++) {
+							  size_t z = (row * bmp.width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
+							  //printf("byte %d %d %d**  \n",	image[z],image[z + 1],image[z + 2]);
+							  location = col*2+(row*finfo.line_length);			//her bir pixel 2 byte olduğu için col*2 yaptım.
+							  *((uint16_t*)(fbp + location)) = image[z]<<8|image[z+1]<<3|image[z+2]>>3;		//ram'e datayı yazıyorum.
+						} 
+					}
+				}else{
+					printf ("clear");
+					for (row = 0; row != bmp.height; row++) {
+						for (col = 0; col != bmp.width; col++) {
+							  size_t z = (row * bmp.width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
+							  //printf("byte %d %d %d**  \n",	image[z],image[z + 1],image[z + 2]);
+							  location = col*2+(row*finfo.line_length);			//her bir pixel 2 byte olduğu için col*2 yaptım.
+							  *((uint16_t*)(fbp + location)) = 0;
+						} 
+					}
+				}
 		    }else if(bmp.bpp==24) 		//resim çözünürlüğü 24bpp mi?
 		    {
-			//printf("16bpp ekrana 24bpp resim...");
+			printf("16bpp ekrana 24bpp resim...");
 		      for (row = 0; row != bmp.height; row++) {
 			      for (col = 0; col != bmp.width; col++) {
 				    size_t z = (row * bmp.width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
