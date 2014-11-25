@@ -45,7 +45,7 @@ size_t bitmap_get_bpp(void *bitmap);
 void bitmap_destroy(void *bitmap);
 void showBitmap(uint8_t *resim, char *fbPointer);
 
-#define EKRANADEDI 3
+#define EKRANADEDI 17
 
 bmp_bitmap_callback_vt bitmap_callbacks = {
 	bitmap_create,
@@ -234,7 +234,7 @@ dondur:
 		bmp_create(&bmp[i], &bitmap_callbacks);
 		//showBitmap();
 		// load file into memory 
-		sprintf(&buffer[0],"/home/pi/selim/bmp2fb/images/v%d/samplescreen%d.bmp",dondurt,i);
+		sprintf(&buffer[0],"/home/pi/selim/bmp2fb/AllContent/v%d/samplescreen%d.bmp",dondurt,i);
 		//printf("%s",buffer);
 		data[i] = load_file(buffer, &size);
 		// analyse the BMP 
