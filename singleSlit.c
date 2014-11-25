@@ -19,7 +19,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include "libnsbmp.c"
-#include <wiringPi.h>
+//#include <wiringPi.h>
 
 #include <unistd.h>
 
@@ -53,7 +53,7 @@ void bitmap_destroy(void *bitmap);
 void showBitmap(uint8_t *resim, char *fbPointer);
 //void fillSlit(unsigned char slit, unsigned char *dt,unsigned int topOffset, unsigned int bottomOffset);
 void fillSlit(unsigned char slit,unsigned int topOffset, unsigned int bottomOffset);
-
+void fullFill(void);
 
 #define EKRANADEDI 	17
 #define SLITSIZE	13
@@ -177,9 +177,9 @@ int main(int argc, char *argv[])
 //		return 1;
 //	}
 	
-	wiringPiSetup(); // Initializes wiringPi using wiringPi's simlified number system.
-	wiringPiSetupGpio(); // Initializes wiringPi using the Broadcom GPIO pin numbers
-	pinMode(17, INPUT);
+	//wiringPiSetup(); // Initializes wiringPi using wiringPi's simlified number system.
+	//wiringPiSetupGpio(); // Initializes wiringPi using the Broadcom GPIO pin numbers
+	//pinMode(17, INPUT);
 	if ((getuid ()) != 0) {
 
         	printf ("You are not root, run this as root or sudo\n");
@@ -274,7 +274,7 @@ tekrarOlc:			//ekran çözünürlüğü tutmuyorsa ayarlayıp tekrar buraya gele
 					for(i=0;i<EKRANADEDI;i++)
 					{
 							location = x+(y*finfo[i].line_length);
-							*((uint16_t*)(fbp[i] + location))=0x10;
+							*((uint16_t*)(fbp[i] + location))=0x00;
 					//      *((uint8_t*)(fbp[i] + location+1)$
 							// *((uint8_t*)(fbp[i] + location$
 							//x+=2;
@@ -288,9 +288,9 @@ tekrarOlc:			//ekran çözünürlüğü tutmuyorsa ayarlayıp tekrar buraya gele
 		bmp_create(&bmp[i], &bitmap_callbacks);
 		//showBitmap();
 		// load file into memory 
-		//sprintf(&buffer[0],"/home/pi/selim/bmp2fb/images/v0/samplescreen%d.bmp",i,i);
+		sprintf(&buffer[0],"/home/pi/selim/bmp2fb/images/v0/samplescreen%d.bmp",i,i);
 		//sprintf(&buffer[0],"/home/pi/selim/bmp2fb/colorChart.bmp",i,i);
-		sprintf(&buffer[0],"/home/pi/selim/bmp2fb/samplescreen0.bmp",i,i);
+		//sprintf(&buffer[0],"/home/pi/selim/bmp2fb/samplescreen0.bmp",i,i);
 		//printf("%s",buffer);
 		data[i] = load_file(buffer, &size);
 		// analyse the BMP 
@@ -312,8 +312,12 @@ tekrarOlc:			//ekran çözünürlüğü tutmuyorsa ayarlayıp tekrar buraya gele
 			}
 		}
 	}
+	printf("Bekliyor...\n");
+	
+	
 	slitNo=0;
-	fillSlit(20,0,0);
+	fillSlit(30,0,0);
+	
 	/*do{
 	fillSlit(slitNo,0,0);
 	//sleep(1.1);
@@ -340,10 +344,10 @@ tekrarOlc:			//ekran çözünürlüğü tutmuyorsa ayarlayıp tekrar buraya gele
 				}
 			}
 		}
-		while(digitalRead(17));
-		sleep(0.1);
-		while(digitalRead(17)==0);
-		sleep(0.1);
+		//while(digitalRead(17));
+		//sleep(0.1);
+		//while(digitalRead(17)==0);
+		//sleep(0.1);
 		// kullanılmayan slitleri sifirliyorum.
 		for (row = slitNo*SLITSIZE; row < slitNo*SLITSIZE + SLITSIZE; row++) {
 			for (col = 0; col != bmp[0].width; col++) {
@@ -356,7 +360,7 @@ tekrarOlc:			//ekran çözünürlüğü tutmuyorsa ayarlayıp tekrar buraya gele
 				}
 			}
 		}
-	}*/	
+	}	*/
 cleanup:
 	// clean up 
 	bmp_finalise(&bmp[i]);
@@ -493,8 +497,9 @@ static unsigned char oncekiSlit=0;
 
 	/*sonra istenilen sliti guncelliyorum*/
 	/*****************************************************************/
+	
 	for (row = slit*SLITSIZE; row < slit*SLITSIZE + SLITSIZE; row++) {
-		for(i=0;i<EKRANADEDI;i++){
+		for(i=0;i<6;i++){
 			//buraya her bir projektor icin onceden belirlenmis offset degerini bir dosyadan okuyarak offset olarak yazacagim.
 			for (col = bottomOffset; col != bmp[0].width-topOffset; col++) {
 				image = (uint8_t *) bmp[i].bitmap;
@@ -505,7 +510,7 @@ static unsigned char oncekiSlit=0;
 		}
 	}
 	for (row = (slit+2)*SLITSIZE; row < (slit+2)*SLITSIZE + SLITSIZE; row++) {
-		for(i=0;i<EKRANADEDI;i++){
+		for(i=0;i<6;i++){
 			//buraya her bir projektor icin onceden belirlenmis offset degerini bir dosyadan okuyarak offset olarak yazacagim.
 			for (col = bottomOffset; col != bmp[0].width-topOffset; col++) {
 				image = (uint8_t *) bmp[i].bitmap;
@@ -516,4 +521,22 @@ static unsigned char oncekiSlit=0;
 		}
 	}
 	/*****************************************************************/
+}
+
+void fullFill(void)
+{
+unsigned int row,col;
+unsigned char i;
+long int location = 0;
+	for (row = slit*SLITSIZE; row < slit*SLITSIZE + SLITSIZE; row++) {
+		for(i=0;i<6;i++){
+			//buraya her bir projektor icin onceden belirlenmis offset degerini bir dosyadan okuyarak offset olarak yazacagim.
+			for (col = bottomOffset; col != bmp[0].width-topOffset; col++) {
+				image = (uint8_t *) bmp[i].bitmap;
+				size_t z = (row * bmp[i].width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
+				location = col*2+(row*finfo[i].line_length);			//her bir pixel 2 byte olduğu için col*2 yaptım.
+				*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
+			}
+		}
+	}
 }
