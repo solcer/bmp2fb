@@ -46,6 +46,8 @@ void bitmap_destroy(void *bitmap);
 void showBitmap(uint8_t *resim, char *fbPointer);
 
 #define EKRANADEDI 17
+//signed int offsetler[EKRANADEDI]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+signed int offsetler[EKRANADEDI]={0,111,50,143,36,32,45,139,151,54,44,115,59,47,51,30,53};
 
 bmp_bitmap_callback_vt bitmap_callbacks = {
 	bitmap_create,
@@ -148,10 +150,11 @@ int main(int argc, char *argv[])
 		c2m[i].console = (uint32_t) 10+i;			//framebuffer a atanacak consol numarası
 		c2m[i].framebuffer = (uint32_t) i;		//framebuffer numarası
 
-		sprintf(&buffer[0],"/dev/fb%d",i);
+		sprintf(&buffer[0],"/dev/fb%d",i); 
 		fbfd[i] = open(buffer, O_RDWR);	//framebuffer ı açıyoru
 		if (fbfd[i] == -1) 			//hata geldi mi?
 		{
+			printf("acilamayan device no:%d",i);
 			perror("Error: cannot open framebuffer device :" );
 			exit(1);
 		}
@@ -180,7 +183,7 @@ int main(int argc, char *argv[])
 			exit(2);
 
 		}
-
+tekrarOlc:			//ekran çözünürlüğü tutmuyorsa ayarlayıp tekrar buraya gelecek
 		// Get variable screen information
 		if (ioctl(fbfd[i], FBIOGET_VSCREENINFO, &vinfo[i]) == -1) {
 
@@ -188,8 +191,14 @@ int main(int argc, char *argv[])
 
 			exit(3);
 		}
-		//printf("Variable screen information fb%d: %dx%d, %dbpp\n",i, vinfo[i].xres, vinfo[i].yres, vinfo[i].bits_per_pixel);
-
+		printf("%d. Variable screen information fb%d: %dx%d, %dbpp\n",i,i, vinfo[i].xres, vinfo[i].yres, vinfo[i].bits_per_pixel);
+		if(vinfo[i].xres!=848)		//eger resolution tutmuyorsa ayarla
+		{
+			printf("fb%d resolution yanlis. Duzeltiliyor...\n",i);
+			sprintf(&buffer[0],"sudo fbset -fb /dev/fb%d 848x480-60",i);
+			res = system(buffer);
+			goto tekrarOlc;
+		}
 
 		// Figure out the size of the screen in bytes
 
@@ -212,6 +221,10 @@ int main(int argc, char *argv[])
 
 
 	}
+	for(i=0;i<EKRANADEDI;i++)
+		//printf("finfo[%d].line_length:%d\n",i,finfo[i].line_length);
+		printf("Fixed screen information, finfo.smem_len:%d, finfo.line_length:%d\n", finfo[i].smem_len,finfo[i].line_length);
+		
 	 for(y=0;y<480;y++)
         {
                 for(x=0;x<finfo[0].line_length;x++)
@@ -220,10 +233,7 @@ int main(int argc, char *argv[])
                         for(i=0;i<EKRANADEDI;i++)
                         {
                                 location = x+(y*finfo[i].line_length);
-                                *((uint16_t*)(fbp[i] + location))=0xaaaa;
-                        //      *((uint8_t*)(fbp[i] + location+1)$
-                                // *((uint8_t*)(fbp[i] + location$
-                                //x+=2;
+                                *((uint16_t*)(fbp[i] + location))=0;//xaaaa;
                         }
                 }
         }
@@ -234,6 +244,7 @@ dondur:
 		bmp_create(&bmp[i], &bitmap_callbacks);
 		//showBitmap();
 		// load file into memory 
+		//sprintf(&buffer[0],"/home/pi/selim/bmp2fb/calibrationPicture.bmp");
 		sprintf(&buffer[0],"/home/pi/selim/bmp2fb/AllContent/v%d/samplescreen%d.bmp",dondurt,i);
 		//printf("%s",buffer);
 		data[i] = load_file(buffer, &size);
@@ -253,24 +264,56 @@ dondur:
 			if (code != BMP_INSUFFICIENT_DATA) {
 				res = 1;
 				goto cleanup;
-			}
+			}	
 		}
 	}
 	//for(i=0;i<EKRANADEDI;i++){
 		//printf("%d. ekran ",i);
 		//image = (uint8_t *) bmp[i].bitmap;
-		for (row = 0; row != bmp[0].height; row++) {
-			//printf("row: %d",row);
-			for (col = 0; col != bmp[0].width; col++) {
+		for(i=0;i<EKRANADEDI;i++){ 
+			if( finfo[i].line_length==1600)			//frame buffer'ın biri farklı onu düzgün göstermek için burayı yazıyorum
+			{
+				printf("1600 de\n");
+				for (row = 0; row != 600; row++) {		//480
+					for (col = 0; col != 800; col++) {		//848
+						image = (uint8_t *) bmp[i].bitmap;
+						size_t z = (row * 800 + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
+						location = (col+offsetler[i])*2+(row*finfo[i].line_length);					//her bir pixel 2 byte olduğu için col*2 yaptım.
+						*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
+					}
+				}
+			}else{
+				for (row = 0; row != bmp[0].height; row++) {		//480
+					for (col = 0; col != bmp[0].width; col++) {		//848
+						image = (uint8_t *) bmp[i].bitmap;
+						size_t z = (row * bmp[i].width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
+						location = (col+offsetler[i])*2+(row*finfo[i].line_length);					//her bir pixel 2 byte olduğu için col*2 yaptım.
+						*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
+					}
+				}
+			}		
+		}
+		
+		
+		/*for (row = 0; row != bmp[0].height; row++) {		//480
+			for (col = 0; col != bmp[0].width; col++) {		//848
+			//for (col = 0; col != finfo[i].line_length/(vinfo[i].bits_per_pixel/8); col++) {
 				for(i=0;i<EKRANADEDI;i++){
-		               		image = (uint8_t *) bmp[i].bitmap;
-					//printf("col: %d",col);
-					size_t z = (row * bmp[i].width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
-					location = col*2+(row*finfo[i].line_length);			//her bir pixel 2 byte olduğu için col*2 yaptım.
-					*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
+					if( finfo[i].line_length==1600)			//frame buffer'ın biri farklı onu düzgün göstermek için burayı yazıyorum
+					{
+						image = (uint8_t *) bmp[i].bitmap;
+						size_t z = (row * bmp[i].width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
+						location = (col+offsetler[i])*2+(row*finfo[i].line_length);					//her bir pixel 2 byte olduğu için col*2 yaptım.
+						*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
+					}else{
+						image = (uint8_t *) bmp[i].bitmap;
+						size_t z = (row * bmp[i].width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
+						location = (col+offsetler[i])*2+(row*finfo[i].line_length);					//her bir pixel 2 byte olduğu için col*2 yaptım.
+						*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
+					}
 				}
 			}
-		}
+		}*/
 /*	dondurt++;
 	if(dondurt==9) dondurt=0;
 	goto dondur;*/
@@ -296,10 +339,9 @@ cleanup:
 	//	munmap(fbp[i], screensize[i]); 
 	//	close(fbfd[i]);
 	}
-	//printf("donuyor\n");
-	 dondurt++;
-        if(dondurt==9) dondurt=0;
-        goto dondur;
+	//dondurt++;
+	//if(dondurt==9) dondurt=0;
+	//	goto dondur;
 	 for(i=0;i<EKRANADEDI;i++)
         {
 	 	munmap(fbp[i], screensize[i]); 

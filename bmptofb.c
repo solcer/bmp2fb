@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
 
         	exit(1);
 
-    	}
+    }
 
 	sprintf(&yazi[0],"/dev/%s",argv[2]);
 	fbfd = open(yazi, O_RDWR);
@@ -122,47 +122,26 @@ int main(int argc, char *argv[])
 	      perror("Error: cannot open framebuffer device");
 	      exit(1);
 	}
-	
-	
+    printf("The framebuffer device was opened successfully.\n");
+	tty = open("/dev/tty0", O_RDWR);
+	if(ioctl(tty, KDSETMODE, KD_GRAPHICS) == -1)
+	printf("Failed to set graphics mode on tty1\n");
+	// Get fixed screen information
+	if (ioctl(fbfd, FBIOGET_FSCREENINFO, &finfo) == -1) {
 
-    	
+		perror("Error reading fixed information");
 
-    	printf("The framebuffer device was opened successfully.\n");
+		exit(2);
 
- 
+	}
+	// Get variable screen information
+	if (ioctl(fbfd, FBIOGET_VSCREENINFO, &vinfo) == -1) {
 
- 
+		perror("Error reading variable information");
 
-    	tty = open("/dev/tty0", O_RDWR);
+		exit(3);
 
- 
-
-    	if(ioctl(tty, KDSETMODE, KD_GRAPHICS) == -1)
-
-		printf("Failed to set graphics mode on tty1\n");
-
- 
-
-    	// Get fixed screen information
-
-    	if (ioctl(fbfd, FBIOGET_FSCREENINFO, &finfo) == -1) {
-
-        	perror("Error reading fixed information");
-
-        	exit(2);
-
-    	}
-
- 
-
-    	// Get variable screen information
-    	if (ioctl(fbfd, FBIOGET_VSCREENINFO, &vinfo) == -1) {
-
-        	perror("Error reading variable information");
-
-        	exit(3);
-
-    	}
+	}
     	/*else
 	{
 		printf("bpp ayarlaniyor...\n");
@@ -191,7 +170,7 @@ int main(int argc, char *argv[])
 
  
 
-    	//printf("Fixed screen information: %dx%d, %dbpp\n", finfo.xres, finfo.yres, finfo.bits_per_pixel);
+    	printf("Fixed screen information, size:%d line lenght:%d\n", finfo.smem_len,finfo.line_length);
 
     	printf("Variable screen information: %dx%d, %dbpp\n", vinfo.xres, vinfo.yres, vinfo.bits_per_pixel);
 
@@ -199,13 +178,11 @@ int main(int argc, char *argv[])
 
     	// Figure out the size of the screen in bytes
 
-    	//screensize = vinfo.xres * vinfo.yres * vinfo.bits_per_pixel / 8;
+    	screensize = vinfo.xres * vinfo.yres * vinfo.bits_per_pixel / 8;
 
-    	screensize = vinfo.yres_virtual * finfo.line_length;
+    	//screensize = vinfo.yres_virtual * finfo.line_length;
 
     	printf("screensize: %d\n",screensize); 
-
- 
 
  
 
@@ -309,11 +286,11 @@ int main(int argc, char *argv[])
 				}
 		    }else if(bmp.bpp==24) 		//resim çözünürlüğü 24bpp mi?
 		    {
-			printf("16bpp ekrana 24bpp resim...");
+			printf("16bpp ekrana 24bpp resim...\n");
 		      for (row = 0; row != bmp.height; row++) {
 			      for (col = 0; col != bmp.width; col++) {
 				    size_t z = (row * bmp.width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
-				    location = col*2+(row*finfo.line_length);			//her bir pixel 2 byte olduğu için col*2 yaptım.
+				    location = col*2+(row*finfo.line_length);					//her bir pixel 2 byte olduğu için col*2 yaptım.
 				    *((uint16_t*)(fbp + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
 				     
 			      } 
