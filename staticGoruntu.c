@@ -8,6 +8,8 @@
  */
 
 //selim Ölçer 14/10/2014 bmp to framebuffer
+//27.11.2014 staticGoruntu.c
+
 #include <assert.h>
 #include <errno.h>
 #include <stdbool.h>
@@ -123,7 +125,7 @@ int main(int argc, char *argv[])
     	long int location = 0;
 	
 	uint8_t buffer[100];
-	
+	uint8_t calibration=0;
 
 	uint16_t row, col;
 	int cport_nr=22;        /* /dev/ttyAMA0 */
@@ -253,10 +255,13 @@ dondur:
 	{
 		// create our bmp image 
 		bmp_create(&bmp[i], &bitmap_callbacks);
-		//showBitmap();
 		// load file into memory 
-		//sprintf(&buffer[0],"/home/pi/selim/bmp2fb/calibrationPicture.bmp");
-		sprintf(&buffer[0],"/home/pi/selim/bmp2fb/AllContent/v%d/samplescreen%d.bmp",dondurt,i);
+		if(calibration==1)
+		{
+			sprintf(&buffer[0],"/home/pi/selim/bmp2fb/calibrationPicture.bmp");
+		}else{
+			sprintf(&buffer[0],"/home/pi/selim/bmp2fb/AllContent/v%d/samplescreen%d.bmp",dondurt,i);
+		}
 		//printf("%s",buffer);
 		data[i] = load_file(buffer, &size);
 		// analyse the BMP 
@@ -303,30 +308,36 @@ dondur:
 			}		
 		}
 		
-		
-		/*for (row = 0; row != bmp[0].height; row++) {		//480
-			for (col = 0; col != bmp[0].width; col++) {		//848
-			//for (col = 0; col != finfo[i].line_length/(vinfo[i].bits_per_pixel/8); col++) {
-				for(i=0;i<EKRANADEDI;i++){
-					if( finfo[i].line_length==1600)			//frame buffer'ın biri farklı onu düzgün göstermek için burayı yazıyorum
-					{
-						image = (uint8_t *) bmp[i].bitmap;
-						size_t z = (row * bmp[i].width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
-						location = (col+offsetler[i])*2+(row*finfo[i].line_length);					//her bir pixel 2 byte olduğu için col*2 yaptım.
-						*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
-					}else{
-						image = (uint8_t *) bmp[i].bitmap;
-						size_t z = (row * bmp[i].width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
-						location = (col+offsetler[i])*2+(row*finfo[i].line_length);					//her bir pixel 2 byte olduğu için col*2 yaptım.
-						*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
-					}
-				}
-			}
-		}*/
 /*	dondurt++;
 	if(dondurt==9) dondurt=0;
 	goto dondur;*/
 	//}
+	printf("**************KOMUTLAR**************\n");
+	printf("Kalibrasyon için 'c'\n");
+	printf("Goruntuyu dondurmek için 'a'\n");
+	do{
+		i=RS232_PollComport(cport_nr,&uartBuf[0],1);
+		if(i>0)
+			printf("i:%d - gelen: %c\n",i,uartBuf[0]);
+	}while(i==-1);
+	printf("i:%d - gelen: %c\n",i,uartBuf[0]);
+	if(uartBuf[0]=='c')
+	{
+ekranSec:
+		printf("Ekran seçin(0-16): ");
+		do{
+			i=RS232_PollComport(cport_nr,&uartBuf[0],1);
+			printf("i:%d\n",i);
+		}while(i==-1);
+		if(isdigit(uartBuf[0])){
+		}
+		else{
+			printf("0 - 16 arasi sayi girilmeli\n");
+			goto ekranSec;
+		}
+	}else if(uartBuf[0]=='a'){
+	 goto ekranSec;
+	}
 	
 
 cleanup:
@@ -337,18 +348,12 @@ cleanup:
 	for(i=0;i<EKRANADEDI;i++)
 	{
 		free(data[i]);
-	//	munmap(fbp[i], screensize[i]); 
-	//	close(fbfd[i]);
+		munmap(fbp[i], screensize[i]); 
+		close(fbfd[i]);
 	}
 	//dondurt++;
 	//if(dondurt==9) dondurt=0;
 	//	goto dondur;
-	 for(i=0;i<EKRANADEDI;i++)
-        {
-	 	munmap(fbp[i], screensize[i]); 
-         	close(fbfd[i]);
-	}
-
 	return res;
 }
 
