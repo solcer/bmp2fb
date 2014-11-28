@@ -50,9 +50,9 @@ void bitmap_destroy(void *bitmap);
 void showBitmap(uint8_t *resim, char *fbPointer);
 uint8_t resimleriYenile(unsigned int sahneNo);			//0. sahne no calibrasyon resmi
 void cleanUp(void);
-void frameBufferYenile(void);
+void tumFrameBufferYenile(void);
 void frameBufferTemizle(void);
-
+void frameBufferYenile(unsigned char fbNo);
 #define EKRANADEDI 17
 //signed int offsetler[EKRANADEDI]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 //signed int offsetler[EKRANADEDI]={0,111,50,143,36,32,45,139,151,54,44,115,59,47,51,30,53};
@@ -73,6 +73,7 @@ bmp_image bmp[EKRANADEDI];
 
 /* framebuffer */
 
+int calismaModu;
 int uzaktty;
 int fbfd[EKRANADEDI] , tty[EKRANADEDI] ;
 
@@ -123,11 +124,11 @@ int main(int argc, char *argv[])
 	
 	int i = 0;
 
-    	uint8_t pixel = 0,dondurt=0;
+	uint8_t pixel = 0,dondurt=0;
 
-    	bool stripe = true;
+	bool stripe = true;
 
-    	long int location = 0;
+	long int location = 0;
 	
 	uint8_t buffer[100];
 	int cport_nr=22;        /* /dev/ttyAMA0 */
@@ -135,13 +136,13 @@ int main(int argc, char *argv[])
 	unsigned char uartBuf[4096];
 	char mode[]={'8','N','1',0};
 
-	uzaktty =open("/dev/tty",O_RDWR);
+	uzaktty =open("/dev/tty",O_RDWR);//O_RDONLY);
 	if(uzaktty==-1)
 	{
 		printf("Can not open tty0\n");
 	}
-	sprintf(buffer,"Hazir\n");
-	write(uzaktty,buffer,sizeof(buffer));
+	//printf("Hazir\n");
+	//write(uzaktty,buffer,sizeof(buffer));
 	if(RS232_OpenComport(cport_nr, bdrate, mode))
 	{
 		printf("Can not open comport\n");
@@ -158,11 +159,11 @@ int main(int argc, char *argv[])
 	
 	if ((getuid ()) != 0) {
 
-        	printf ("You are not root, run this as root or sudo\n");
+		printf ("You are not root, run this as root or sudo\n");
 
-        	exit(1);
+		exit(1);
 
-    	}
+    }
 
 	for(i=0;i<EKRANADEDI;i++)				//ekranları tty lere atayıp ram'de pointer a işaretliyor
 	{
@@ -212,7 +213,7 @@ tekrarOlc:			//ekran çözünürlüğü tutmuyorsa ayarlayıp tekrar buraya gele
 
 			exit(3);
 		}
-		printf("%d. Variable screen information fb%d: %dx%d, %dbpp\n",i,i, vinfo[i].xres, vinfo[i].yres, vinfo[i].bits_per_pixel);
+		printf("%d. Variable screen fb%d: %dx%d, %dbpp - Fixed screen finfo.smem_len:%d, finfo.line_length:%d\n",i,i, vinfo[i].xres, vinfo[i].yres, vinfo[i].bits_per_pixel, finfo[i].smem_len,finfo[i].line_length);
 		if(vinfo[i].xres!=848)		//eger resolution tutmuyorsa ayarla
 		{
 			printf("fb%d resolution yanlis. Duzeltiliyor...\n",i);
@@ -242,23 +243,123 @@ tekrarOlc:			//ekran çözünürlüğü tutmuyorsa ayarlayıp tekrar buraya gele
 
 
 	}
-	for(i=0;i<EKRANADEDI;i++)			//ekran bilgilerini yazdır		
-	{	
-		printf("Fixed screen information, finfo.smem_len:%d, finfo.line_length:%d\n", finfo[i].smem_len,finfo[i].line_length);
-		//printf("finfo[%d].line_length:%d\n",i,finfo[i].line_length);
-	}		
 	frameBufferTemizle();
-	resimleriYenile(0);
-	frameBufferYenile();
+	//resimleriYenile(1);
+	//tumFrameBufferYenile();
 dondur:
-	resimleriYenile(1);
-	frameBufferYenile();
+	while(1)
+	{
+		switch(calismaModu)
+		{
+			case 0:			//baslangic modu
+				resimleriYenile(1);
+				tumFrameBufferYenile();
+				printf("Projektor kalibrasyonu icin 'k' 'ya basin\n");
+				printf("icerigi dondurmek icin 'd' 'ye basin\n");
+				size=read(uzaktty,buffer,2);
+				switch(buffer[0]){
+					case 'k':
+						calismaModu=1;
+						printf("\t\t\t\t\t************Ofsetler**************\n");
+						printf("16\t15\t14\t13\t12\t11\t10\t09\t08\t07\t06\t05\t04\t03\t02\t01\t00\n");
+						for(i=EKRANADEDI-1;i>-1;i--){
+							printf("%d\t",offsetler[i]);
+						}
+						printf("\n");
+						resimleriYenile(0);
+						tumFrameBufferYenile();
+						break;
+					case 'd':
+						dondurt++;
+						if(dondurt==9) dondurt=0;
+						resimleriYenile(dondurt);
+						tumFrameBufferYenile();
+						break;
+					default:
+						printf("hata var\n");
+				}
+				
+				break;
+			case 1:
+				sprintf(buffer,"Projektor numarasi(00-16) 'q' = cikis: ");
+				write(uzaktty,buffer,39);
+				//printf("Projektor numarsi: (01-16)  ");
+				size=read(uzaktty,buffer,3);
+				if(buffer[0]=='q'){
+					calismaModu=0;
+					break;
+				}
+				i=atoi(buffer);
+				if(i<16 && i>-1){
+					calismaModu=2;
+					sprintf(buffer,"deger girin. 1=+1, 2=+10, 3=-1, 4=-10 q= cikis\n");
+					write(uzaktty,buffer,48);
+					//offsetler[i]=offsetler[i]++;
+					//frameBufferYenile(i);
+				}else{ 
+					printf("yanlis numara!");
+				}
+				break;
+			case 2:			//istenen framebufferin offsetini ayarlıyor
+				size=read(uzaktty,buffer,2);
+				switch(buffer[0]){
+					case '1':
+						offsetler[i]++;
+						break;
+					case '2':
+						offsetler[i]+=10;
+						break;
+					case '3':
+						offsetler[i]--;
+						break;
+					case '4':
+						offsetler[i]-=10;
+						break;
+					case 'q':
+						calismaModu=1;
+						break;
+					default:
+						printf("yanlis deger\n");
+				}
+				frameBufferYenile(i);
+				break;
+		}
+		/*
+		printf("Projektör kalibrasyonu icin 'k' 'ya basin\n");
+		size=read(uzaktty,buffer,2);
+		if(buffer[0]=='k')
+		{
+			printf("Kalibrasyon...\n");
+			resimleriYenile(0);
+			tumFrameBufferYenile();
+			
+			sprintf(&buffer[0],"Ekran Numarasini girin (01,02....16): ");
+			write(uzaktty,buffer,sizeof(buffer));
+			size=read(uzaktty,buffer,3);
+			//printf("gelen sayi:%d,asil:%s",atoi(buffer),buffer);
+			i=atoi(buffer);
+			if(i<16 && i>-1){
+				offsetler[i]=offsetler[i]+50;
+				tumFrameBufferYenile();
+			}else{ 
+				sprintf(&buffer[0],"yanlis deger girildi.\n");
+				write(uzaktty,buffer,sizeof(buffer));
+			}
+			//while(1);
+			
+		}else{
+			resimleriYenile(1);
+			tumFrameBufferYenile();
+		}*/
+	}
+	
 		
 /*	dondurt++;
 	if(dondurt==9) dondurt=0;
 	goto dondur;*/
 	//}
-	printf("**************KOMUTLAR**************\n");
+	
+	/*printf("**************KOMUTLAR**************\n");
 	printf("Kalibrasyon için 'c'\n");
 	printf("Goruntuyu dondurmek için 'a'\n");
 	do{
@@ -284,7 +385,7 @@ ekranSec:
 	}else if(uartBuf[0]=='a'){
 	 goto ekranSec;
 	}
-	
+	*/
 	cleanUp();
 	//dondurt++;
 	//if(dondurt==9) dondurt=0;
@@ -387,6 +488,7 @@ int i;
 uint8_t buffer[128];
 size_t size;
 unsigned short res = 0;
+	printf("resimler yenileniyor...");
 	for(i=0;i<EKRANADEDI;i++)					//resimleri import eden kısım.
 	{
 		// create our bmp image 
@@ -422,6 +524,7 @@ unsigned short res = 0;
 			}	
 		}
 	}
+	printf("OK.\n");
 }
 void cleanUp(void){
 	int i;
@@ -437,13 +540,43 @@ void cleanUp(void){
 		close(fbfd[i]);
 	}
 }
-void frameBufferYenile(void){
+
+void frameBufferYenile(unsigned char fbNo)
+{
 int i,row,col;
 long int location = 0;
+i=fbNo;
+	if( finfo[i].line_length==1600)			//frame buffer'ın biri farklı onu düzgün göstermek için burayı yazıyorum
+	{
+		//printf("1600 de\n");
+		for (row = 0; row != 600; row++) {		//480
+			for (col = 0; col != 800; col++) {		//848
+				image = (uint8_t *) bmp[i].bitmap;
+				size_t z = (row * 800 + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
+				location = (col+offsetler[i])*2+(row*finfo[i].line_length);					//her bir pixel 2 byte olduğu için col*2 yaptım.
+				*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
+			}
+		}
+	}else{
+		for (row = 0; row != bmp[0].height; row++) {		//480
+			for (col = 0; col != bmp[0].width; col++) {		//848
+				image = (uint8_t *) bmp[i].bitmap;
+				size_t z = (row * bmp[i].width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
+				location = (col+offsetler[i])*2+(row*finfo[i].line_length);					//her bir pixel 2 byte olduğu için col*2 yaptım.
+				*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
+			}
+		}
+	}
+}
+
+void tumFrameBufferYenile(void){
+int i,row,col;
+long int location = 0;
+	printf("Framebufferlar yenileniyor...");
 	for(i=0;i<EKRANADEDI;i++){ 				//resimleri ekranlara basan kisim
 		if( finfo[i].line_length==1600)			//frame buffer'ın biri farklı onu düzgün göstermek için burayı yazıyorum
 		{
-			printf("1600 de\n");
+			//printf("1600 de\n");
 			for (row = 0; row != 600; row++) {		//480
 				for (col = 0; col != 800; col++) {		//848
 					image = (uint8_t *) bmp[i].bitmap;
@@ -463,6 +596,7 @@ long int location = 0;
 			}
 		}		
 	}
+	printf("FRAMEBUFFERLAR OK...\n");
 }
 /*
 void frameBufferTemizle(void){
@@ -487,7 +621,7 @@ long int location = 0;
 	for(i=0;i<EKRANADEDI;i++){ 				//resimleri ekranlara basan kisim
 		if( finfo[i].line_length==1600)			//frame buffer'ın biri farklı onu düzgün göstermek için burayı yazıyorum
 		{
-			printf("1600 de\n");
+			//printf("1600 de\n");
 			for (row = 0; row != 600; row++) {		//480
 				for (col = 0; col != 800; col++) {		//848
 					image = (uint8_t *) bmp[i].bitmap;					
