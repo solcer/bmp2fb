@@ -53,11 +53,15 @@ void cleanUp(void);
 void tumFrameBufferYenile(void);
 void frameBufferTemizle(void);
 void frameBufferYenile(unsigned char fbNo);
+void ofsetleriAl(void);
+void ofsetleriYaz(void);
+
+
 #define EKRANADEDI 17
 //signed int offsetler[EKRANADEDI]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 //signed int offsetler[EKRANADEDI]={0,111,50,143,36,32,45,139,151,54,44,115,59,47,51,30,53};
 //signed int offsetler[EKRANADEDI]={0,17,50,48,36,32,45,44,151,54,44,20,59,47,51,30,53};			//2. ayar
-  signed int offsetler[EKRANADEDI]={0,18,50,48,36,32,45,44,55,54,44,20,59,47,51,30,53};			//3. ayar
+  signed int offsetler[EKRANADEDI];//={0,18,50,48,36,32,45,44,55,54,44,20,59,47,51,30,53};			//3. ayar
 
 
 bmp_bitmap_callback_vt bitmap_callbacks = {
@@ -135,7 +139,7 @@ int main(int argc, char *argv[])
    	int bdrate=9600;       /* 9600 baud */
 	unsigned char uartBuf[4096];
 	char mode[]={'8','N','1',0};
-
+	ofsetleriAl();						//ofsetler.dat dosyasindan ofsetleri alır
 	uzaktty =open("/dev/tty",O_RDWR);//O_RDONLY);
 	if(uzaktty==-1)
 	{
@@ -160,7 +164,6 @@ int main(int argc, char *argv[])
 	if ((getuid ()) != 0) {
 
 		printf ("You are not root, run this as root or sudo\n");
-
 		exit(1);
 
     }
@@ -275,6 +278,10 @@ dondur:
 						resimleriYenile(dondurt);
 						tumFrameBufferYenile();
 						break;
+					case 'q':	
+						cleanUp();
+						return 0;
+						break;
 					default:
 						printf("hata var\n");
 				}
@@ -290,9 +297,9 @@ dondur:
 					break;
 				}
 				i=atoi(buffer);
-				if(i<16 && i>-1){
+				if(i<17 && i>-1){
 					calismaModu=2;
-					sprintf(buffer,"deger girin. 1=+1, 2=+10, 3=-1, 4=-10 q= cikis\n");
+					sprintf(buffer,"deger girin. 1=+1, 2=-1, 3=+10, 4=-10 q= cikis\n");
 					write(uzaktty,buffer,48);
 					//offsetler[i]=offsetler[i]++;
 					//frameBufferYenile(i);
@@ -307,16 +314,17 @@ dondur:
 						offsetler[i]++;
 						break;
 					case '2':
-						offsetler[i]+=10;
+						offsetler[i]--;
 						break;
 					case '3':
-						offsetler[i]--;
+						offsetler[i]+=10;
 						break;
 					case '4':
 						offsetler[i]-=10;
 						break;
 					case 'q':
 						calismaModu=1;
+						ofsetleriYaz();
 						break;
 					default:
 						printf("yanlis deger\n");
@@ -638,4 +646,39 @@ long int location = 0;
 			}
 		}		
 	}
+}
+
+void ofsetleriAl(void)
+{
+FILE *ofsetDosyasi;
+char * pch,i;
+	ofsetDosyasi  = fopen("./ofsetler.dat", "r+"); // 
+	if (ofsetDosyasi == NULL ) 
+	{   
+	  printf("Error! Could not open file\n"); 
+	  exit(-1); // must include stdlib.h 
+	} 
+	for (i = 0; i < 17; i++)
+    {
+        fscanf(ofsetDosyasi, "%d,", &offsetler[i] );
+
+    }
+	fclose(ofsetDosyasi);
+}
+void ofsetleriYaz(void)
+{
+FILE *ofsetDosyasi;
+char * pch,i;
+	ofsetDosyasi  = fopen("./ofsetler.dat", "w"); // 
+	if (ofsetDosyasi == NULL ) 
+	{   
+	  printf("Error! Could not open file\n"); 
+	  exit(-1); // must include stdlib.h 
+	} 
+	for (i = 0; i < 17; i++)
+    {
+        fprintf(ofsetDosyasi, "%d,", offsetler[i] );
+
+    }
+	fclose(ofsetDosyasi);
 }
