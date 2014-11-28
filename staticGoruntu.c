@@ -48,6 +48,10 @@ unsigned char *bitmap_get_buffer(void *bitmap);
 size_t bitmap_get_bpp(void *bitmap);
 void bitmap_destroy(void *bitmap);
 void showBitmap(uint8_t *resim, char *fbPointer);
+uint8_t resimleriYenile(unsigned int sahneNo);			//0. sahne no calibrasyon resmi
+void cleanUp(void);
+void frameBufferYenile(void);
+void frameBufferTemizle(void);
 
 #define EKRANADEDI 17
 //signed int offsetler[EKRANADEDI]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
@@ -69,6 +73,7 @@ bmp_image bmp[EKRANADEDI];
 
 /* framebuffer */
 
+int uzaktty;
 int fbfd[EKRANADEDI] , tty[EKRANADEDI] ;
 
 struct fb_var_screeninfo vinfo[EKRANADEDI];
@@ -116,7 +121,7 @@ int main(int argc, char *argv[])
 	
 	unsigned short res = 0;
 	
-	int x = 0, y = 0, i = 0;
+	int i = 0;
 
     	uint8_t pixel = 0,dondurt=0;
 
@@ -125,14 +130,18 @@ int main(int argc, char *argv[])
     	long int location = 0;
 	
 	uint8_t buffer[100];
-	uint8_t calibration=0;
-
-	uint16_t row, col;
 	int cport_nr=22;        /* /dev/ttyAMA0 */
    	int bdrate=9600;       /* 9600 baud */
 	unsigned char uartBuf[4096];
 	char mode[]={'8','N','1',0};
 
+	uzaktty =open("/dev/tty",O_RDWR);
+	if(uzaktty==-1)
+	{
+		printf("Can not open tty0\n");
+	}
+	sprintf(buffer,"Hazir\n");
+	write(uzaktty,buffer,sizeof(buffer));
 	if(RS232_OpenComport(cport_nr, bdrate, mode))
 	{
 		printf("Can not open comport\n");
@@ -163,7 +172,7 @@ int main(int argc, char *argv[])
 		c2m[i].framebuffer = (uint32_t) i;		//framebuffer numarası
 
 		sprintf(&buffer[0],"/dev/fb%d",i); 
-		fbfd[i] = open(buffer, O_RDWR);	//framebuffer ı açıyoru
+		fbfd[i] = open(buffer, O_RDWR);	//framebuffer ı açıyoru		
 		if (fbfd[i] == -1) 			//hata geldi mi?
 		{
 			printf("acilamayan device no:%d",i);
@@ -238,75 +247,12 @@ tekrarOlc:			//ekran çözünürlüğü tutmuyorsa ayarlayıp tekrar buraya gele
 		printf("Fixed screen information, finfo.smem_len:%d, finfo.line_length:%d\n", finfo[i].smem_len,finfo[i].line_length);
 		//printf("finfo[%d].line_length:%d\n",i,finfo[i].line_length);
 	}		
-	 for(y=0;y<480;y++)				////ekrana başlangıç rengi veren kısım
-        {
-                for(x=0;x<finfo[0].line_length;x++)
-                {
-                        //   pixel=0xf8;
-                        for(i=0;i<EKRANADEDI;i++)
-                        {
-                                location = x+(y*finfo[i].line_length);
-                                *((uint16_t*)(fbp[i] + location))=0;//xaaaa;
-                        }
-                }
-        }
+	frameBufferTemizle();
+	resimleriYenile(0);
+	frameBufferYenile();
 dondur:
-	for(i=0;i<EKRANADEDI;i++)					//resimleri import eden kısım.
-	{
-		// create our bmp image 
-		bmp_create(&bmp[i], &bitmap_callbacks);
-		// load file into memory 
-		if(calibration==1)
-		{
-			sprintf(&buffer[0],"/home/pi/selim/bmp2fb/calibrationPicture.bmp");
-		}else{
-			sprintf(&buffer[0],"/home/pi/selim/bmp2fb/AllContent/v%d/samplescreen%d.bmp",dondurt,i);
-		}
-		//printf("%s",buffer);
-		data[i] = load_file(buffer, &size);
-		// analyse the BMP 
-		code = bmp_analyse(&bmp[i], size, data[i]);
-		if (code != BMP_OK) {
-			warning("bmp_analyse", code);
-			res = 1;
-			goto cleanup;
-		}
-		// decode the image
-		code = bmp_decode(&bmp[i]);
-		// code = bmp_decode_trans(&bmp, TRANSPARENT_COLOR); 
-		if (code != BMP_OK) {
-			warning("bmp_decode", code);
-			// allow partially decoded images 
-			if (code != BMP_INSUFFICIENT_DATA) {
-				res = 1;
-				goto cleanup;
-			}	
-		}
-	}
-
-		for(i=0;i<EKRANADEDI;i++){ 				//resimleri ekranlara basan kisim
-			if( finfo[i].line_length==1600)			//frame buffer'ın biri farklı onu düzgün göstermek için burayı yazıyorum
-			{
-				printf("1600 de\n");
-				for (row = 0; row != 600; row++) {		//480
-					for (col = 0; col != 800; col++) {		//848
-						image = (uint8_t *) bmp[i].bitmap;
-						size_t z = (row * 800 + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
-						location = (col+offsetler[i])*2+(row*finfo[i].line_length);					//her bir pixel 2 byte olduğu için col*2 yaptım.
-						*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
-					}
-				}
-			}else{
-				for (row = 0; row != bmp[0].height; row++) {		//480
-					for (col = 0; col != bmp[0].width; col++) {		//848
-						image = (uint8_t *) bmp[i].bitmap;
-						size_t z = (row * bmp[i].width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
-						location = (col+offsetler[i])*2+(row*finfo[i].line_length);					//her bir pixel 2 byte olduğu için col*2 yaptım.
-						*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
-					}
-				}
-			}		
-		}
+	resimleriYenile(1);
+	frameBufferYenile();
 		
 /*	dondurt++;
 	if(dondurt==9) dondurt=0;
@@ -319,7 +265,7 @@ dondur:
 		i=RS232_PollComport(cport_nr,&uartBuf[0],1);
 		if(i>0)
 			printf("i:%d - gelen: %c\n",i,uartBuf[0]);
-	}while(i==-1);
+	}while(i==0);
 	printf("i:%d - gelen: %c\n",i,uartBuf[0]);
 	if(uartBuf[0]=='c')
 	{
@@ -339,18 +285,7 @@ ekranSec:
 	 goto ekranSec;
 	}
 	
-
-cleanup:
-	// clean up 
-	bmp_finalise(&bmp[i]);
- 
-
-	for(i=0;i<EKRANADEDI;i++)
-	{
-		free(data[i]);
-		munmap(fbp[i], screensize[i]); 
-		close(fbfd[i]);
-	}
+	cleanUp();
 	//dondurt++;
 	//if(dondurt==9) dondurt=0;
 	//	goto dondur;
@@ -447,3 +382,126 @@ void bitmap_destroy(void *bitmap)
 }
 
 
+uint8_t resimleriYenile(unsigned int sahneNo){
+int i;
+uint8_t buffer[128];
+size_t size;
+unsigned short res = 0;
+	for(i=0;i<EKRANADEDI;i++)					//resimleri import eden kısım.
+	{
+		// create our bmp image 
+		bmp_create(&bmp[i], &bitmap_callbacks);
+		// load file into memory 
+		if(sahneNo==0)
+		{
+			sprintf(&buffer[0],"/home/pi/selim/bmp2fb/calibrationPicture.bmp");
+		}else{
+			sprintf(&buffer[0],"/home/pi/selim/bmp2fb/AllContent/v%d/samplescreen%d.bmp",sahneNo-1,i);
+		}
+		//printf("%s",buffer);
+		data[i] = load_file(buffer, &size);
+		// analyse the BMP 
+		code = bmp_analyse(&bmp[i], size, data[i]);
+		if (code != BMP_OK) {
+			warning("bmp_analyse", code);
+			res = 1;
+			//goto cleanup;
+			cleanUp();
+			return 0;
+		}
+		// decode the image
+		code = bmp_decode(&bmp[i]);
+		// code = bmp_decode_trans(&bmp, TRANSPARENT_COLOR); 
+		if (code != BMP_OK) {
+			warning("bmp_decode", code);
+			// allow partially decoded images 
+			if (code != BMP_INSUFFICIENT_DATA) {
+				res = 1;
+				cleanUp();
+				return 0;
+			}	
+		}
+	}
+}
+void cleanUp(void){
+	int i;
+	// clean up 
+	bmp_finalise(&bmp[i]);
+	for(i=0;i<EKRANADEDI;i++)
+	{
+		free(data[i]);
+	}
+	 for(i=0;i<EKRANADEDI;i++)
+	{
+		munmap(fbp[i], screensize[i]); 
+		close(fbfd[i]);
+	}
+}
+void frameBufferYenile(void){
+int i,row,col;
+long int location = 0;
+	for(i=0;i<EKRANADEDI;i++){ 				//resimleri ekranlara basan kisim
+		if( finfo[i].line_length==1600)			//frame buffer'ın biri farklı onu düzgün göstermek için burayı yazıyorum
+		{
+			printf("1600 de\n");
+			for (row = 0; row != 600; row++) {		//480
+				for (col = 0; col != 800; col++) {		//848
+					image = (uint8_t *) bmp[i].bitmap;
+					size_t z = (row * 800 + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
+					location = (col+offsetler[i])*2+(row*finfo[i].line_length);					//her bir pixel 2 byte olduğu için col*2 yaptım.
+					*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
+				}
+			}
+		}else{
+			for (row = 0; row != bmp[0].height; row++) {		//480
+				for (col = 0; col != bmp[0].width; col++) {		//848
+					image = (uint8_t *) bmp[i].bitmap;
+					size_t z = (row * bmp[i].width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel başlangıcı hesaplanıyor.
+					location = (col+offsetler[i])*2+(row*finfo[i].line_length);					//her bir pixel 2 byte olduğu için col*2 yaptım.
+					*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
+				}
+			}
+		}		
+	}
+}
+/*
+void frameBufferTemizle(void){
+int i,y,x;	
+long int location = 0;
+	for(y=0;y<480;y++)				////ekrana başlangıç rengi veren kısım
+	{
+			for(x=0;x<finfo[0].line_length;x++)
+			{
+					//   pixel=0xf8;
+					for(i=0;i<EKRANADEDI;i++)
+					{
+							location = x+(y*finfo[i].line_length);
+							*((uint16_t*)(fbp[i] + location))=0;//xaaaa;
+					}
+			}
+	}
+}*/
+void frameBufferTemizle(void){
+int i,row,col;
+long int location = 0;
+	for(i=0;i<EKRANADEDI;i++){ 				//resimleri ekranlara basan kisim
+		if( finfo[i].line_length==1600)			//frame buffer'ın biri farklı onu düzgün göstermek için burayı yazıyorum
+		{
+			printf("1600 de\n");
+			for (row = 0; row != 600; row++) {		//480
+				for (col = 0; col != 800; col++) {		//848
+					image = (uint8_t *) bmp[i].bitmap;					
+					location = (col+offsetler[i])*2+(row*finfo[i].line_length);					//her bir pixel 2 byte olduğu için col*2 yaptım.
+					*((uint16_t*)(fbp[i] + location)) =0;// ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
+				}
+			}
+		}else{
+			for (row = 0; row != bmp[0].height; row++) {		//480
+				for (col = 0; col != bmp[0].width; col++) {		//848
+					location = (col+offsetler[i])*2+(row*finfo[i].line_length);					//her bir pixel 2 byte olduğu için col*2 yaptım.
+					*((uint16_t*)(fbp[i] + location)) = 0;//((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
+				}
+			}
+		}		
+	}
+}
