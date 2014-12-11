@@ -20,22 +20,16 @@
 #include <sys/stat.h>
 #include "libnsbmp.c"
 
-
 #include <unistd.h>
-
 #include <fcntl.h>
-
 #include <linux/fb.h>
-
 #include <sys/mman.h>
-
 #include <sys/ioctl.h>
-
 #include <linux/input.h>
-
 #include <linux/kd.h>
-
 #include "rs232.c" 
+#include <unistd.h>
+#include <termios.h>
 
 #define BYTES_PER_PIXEL 4
 #define TRANSPARENT_COLOR 0xffffffff
@@ -59,6 +53,9 @@ void ttyleriHazirla(void);
 void slitYenile(unsigned int slitNo, unsigned char *dt);
 void fillSlit(unsigned char slit,unsigned int topOffset, unsigned int bottomOffset);
 void slitDoldur(uint8_t projektorNo,uint16_t slit,uint8_t clear);
+int getch(void);
+void ttyOku(void);
+
 #define EKRANADEDI 17
 #define SLITSIZE	13
 //signed int offsetler[EKRANADEDI]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
@@ -185,7 +182,14 @@ dondur:
 	  // printf("fbp[%d]:0x%X\t",i,fbp[i]);
 	  
 	// }
-	
+	while(1){
+		//sprintf(buffer,"projektor no,slit no,göster=1/gösterme=0): ");
+		//write(uzaktty,buffer,45);
+		//i=getch();
+		ttyOku();
+		
+				
+	}
 	
 	while(1)
 	{
@@ -740,10 +744,8 @@ unsigned int row,col;
 unsigned char i=projektorNo;
 long int location = 0;
 static unsigned char oncekiSlit=0;
-printf("%d,%d,%d***\n",projektorNo,slit,clear);
 if(clear!=0){
 	for (row = slit*SLITSIZE; row < slit*SLITSIZE + SLITSIZE; row++) {
-	printf("***row:%d,",row);
 		//buraya her bir projektor icin onceden belirlenmis offset degerini bir dosyadan okuyarak offset olarak yazacagim.
 		for (col = 0; col != 848; col++) {
 			image = (uint8_t *) bmp[i].bitmap;
@@ -753,9 +755,7 @@ if(clear!=0){
 		}
 	}
 }else{
-	printf("else\n");
 	for (row = slit*SLITSIZE; row < ((slit*SLITSIZE )+ SLITSIZE); row++) {
-		printf("row:%d,",row);
 		//buraya her bir projektor icin onceden belirlenmis offset degerini bir dosyadan okuyarak offset olarak yazacagim.
 		for (col = 0; col != 848; col++) {
 			image = (uint8_t *) bmp[i].bitmap;
@@ -765,4 +765,36 @@ if(clear!=0){
 		}
 	}
 }
+}
+
+int getch(void){
+int ch;
+struct termios oldt;
+struct termios newt;
+	tcgetattr(STDIN_FILENO, &oldt); /*store old settings */
+	newt = oldt; /* copy old settings to new settings */
+	newt.c_lflag &= ~(ICANON | ECHO); /* make one change to old settings in new settings */
+	tcsetattr(STDIN_FILENO, TCSANOW, &newt); /*apply the new settings immediatly */
+	ch = getchar(); /* standard getchar call */
+	tcsetattr(STDIN_FILENO, TCSANOW, &oldt); /*reapply the old settings */
+	return ch; /*return received char */
+}
+
+void ttyOku(void)
+{
+FILE *ofsetDosyasi;
+char * pch,i,dt[20],buffer[50];
+	ofsetDosyasi  = fopen("/dev/tty", "r+"); // 
+	if (ofsetDosyasi == NULL ) 
+	{   
+	  printf("Error! Could not open file\n"); 
+	  exit(-1); // must include stdlib.h 
+	} 
+	printf("Projektor No,Slit No,on/off\n");
+	fscanf(ofsetDosyasi, "%d,%d,%d", &dt[0],&dt[1],&dt[2] );
+	//printf("%d,%d,%d", &dt[0],dt[1],dt[2] );
+    //sprintf(buffer,"%d-%d-%d  \n", dt[0],dt[1],dt[2]);
+	//write(uzaktty,buffer,sizeof(buffer));
+	slitDoldur(dt[0],dt[1],dt[2]);
+	fclose(ofsetDosyasi);
 }
