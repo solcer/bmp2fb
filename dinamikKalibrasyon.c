@@ -55,9 +55,14 @@ void fillSlit(unsigned char slit,unsigned int topOffset, unsigned int bottomOffs
 void slitDoldur(uint8_t projektorNo,uint16_t slit,uint8_t clear);
 int getch(void);
 uint16_t ttyOku(void);
+void dataYaz(signed int * ,unsigned char *);
+void dataOku(int  *, unsigned char *);
+
 
 #define EKRANADEDI 17
 #define SLITSIZE	13
+#define PIXELADIMI	8
+#define IKIGOZMESAFESI	42
 //signed int offsetler[EKRANADEDI]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 //signed int offsetler[EKRANADEDI]={0,111,50,143,36,32,45,139,151,54,44,115,59,47,51,30,53};
 //signed int offsetler[EKRANADEDI]={0,17,50,48,36,32,45,44,151,54,44,20,59,47,51,30,53};			//2. ayar
@@ -94,7 +99,7 @@ char *fbp[EKRANADEDI] ;
 uint8_t *image;
 
 unsigned char *data[EKRANADEDI];				//resim datasýný içeren deðiþken
-
+int projektorSlitNolari[EKRANADEDI];
 
 void handler (int sig)
 
@@ -127,6 +132,7 @@ int main(int argc, char *argv[])
 	unsigned short res = 0;
 	
 	int i = 0;
+	
 
 	uint8_t pixel = 0,dondurt=0;
 
@@ -176,30 +182,88 @@ int main(int argc, char *argv[])
 	frameBufferTemizle();
 	resimleriYenile(0);
 	//tumFrameBufferYenile();
-dondur:	
+	
+	dataOku(&projektorSlitNolari[0],"./pixelData.dat");	
+	for(i=0;i<EKRANADEDI;i++){
+		slitDoldur(i,projektorSlitNolari[i],1);
+		slitDoldur(i,projektorSlitNolari[i]+45,1);
+	}
+	
 	while(1){
 		switch(calismaModu){
 			case 0:
-				printf("******p:projektor no gir\n");
-				pNo=ttyOku();
-				printf("%d. projektor\n",pNo);
-				calismaModu=1;	
+				printf("\n0: slitleri ayarlar");
+				printf("\n1: ekran kaydirma ");
+				printf("\nx: cikis \n");
+				i = getch();
+				switch(i){
+					case '0':
+						calismaModu=10;
+						break;
+					case '1':
+						printf("\n<-- & -->\n");
+						calismaModu=1;
+						break;
+					case 'x':				//'x' harfi
+						goto cikis;
+						break;
+				}
 				break;
 			case 1:
-				printf("<- sola kaydir, -> saga kaydir. 's' slit no gir. projektor secmek icin 'p'. x cikis.\n");
+				i = getch();
+				if(i=='x'){
+					calismaModu=0;
+				}
+				if(i==27){			//oklari bul
+					i = getch();
+					if(i==91){
+						i = getch();
+						switch(i){
+							case 67:
+								printf("\r-->           ");
+								sltNo-=PIXELADIMI;
+								for(i=0;i<EKRANADEDI;i++){
+									slitDoldur(i,projektorSlitNolari[i]+sltNo+PIXELADIMI,0);
+									slitDoldur(i,projektorSlitNolari[i]+sltNo+PIXELADIMI+IKIGOZMESAFESI,0);	//2.slit
+									slitDoldur(i,projektorSlitNolari[i]+sltNo,1);
+									slitDoldur(i,projektorSlitNolari[i]+sltNo+IKIGOZMESAFESI,1);		//2.slitler
+								}
+								break;
+							case 68:								
+								printf("\r<--           ");
+								sltNo+=PIXELADIMI;
+								for(i=0;i<EKRANADEDI;i++){
+									slitDoldur(i,projektorSlitNolari[i]+sltNo-PIXELADIMI,0);
+									slitDoldur(i,projektorSlitNolari[i]+sltNo-PIXELADIMI+IKIGOZMESAFESI,0);		//2.slitler
+									slitDoldur(i,projektorSlitNolari[i]+sltNo,1);
+									slitDoldur(i,projektorSlitNolari[i]+sltNo+IKIGOZMESAFESI,1);		//2.slitler
+								}
+								break;
+						}
+					}
+				}
+				break;
+			case 10:
+				printf("\n******p:projektor no gir: ");
+				pNo=ttyOku();
+				//printf("%d. projektor\n",pNo);
+				printf("\n");
+				calismaModu=11;	
+				break;
+			case 11:
+				printf("\r<- sola kaydir, -> saga kaydir. 's' slit no gir. projektor secmek icin 'p'. x cikis. ");
 				i=getch();
 				if(i=='x'){
 					printf("Cikis...\n");
 					cleanUp();
 				}
 				if(i=='p'){			//'p'
-					printf("p geldi mode 2\n");
-					calismaModu=0;
+					//printf("p geldi mode 2\n");
+					calismaModu=10;
 					break;
 				}
 				if(i=='s'){			//'s'
-					printf("s geldi mode 2\n");
-					calismaModu=2;
+					calismaModu=12;
 					break;
 				}
 				if(i==27){			//oklari bul
@@ -208,36 +272,36 @@ dondur:
 						i = getch();
 						switch(i){
 							case 67:
-								//printf("sag\n");
+								printf("--> ");
 								sltNo--;
+								printf("slit:%d",sltNo);
 								slitDoldur(pNo,sltNo+1,0);
 								slitDoldur(pNo,sltNo,1);
+								projektorSlitNolari[pNo]=sltNo;
 								break;
-							case 68:
-								//printf("sol\n");
+							case 68:								
+								printf("<-- ");
 								sltNo++;
-								//printf("sil");
+								printf("slit:%d",sltNo);
 								slitDoldur(pNo,sltNo-1,0);
 								//printf("yaz");
 								slitDoldur(pNo,sltNo,1);
-								//printf("bitti");
+								projektorSlitNolari[pNo]=sltNo;
 								break;
 						}
 					}
 				}
 				break;
-			case 2:
-				printf("Slit baslangic no gir\n");
+			case 12:
+				printf("Slit baslangic no gir: ");
 				slitDoldur(pNo,sltNo,0);
 				sltNo=ttyOku();
 				slitDoldur(pNo,sltNo,1);
-				printf("slit baslangic no:%d \n",i);
-				calismaModu=1;
+				projektorSlitNolari[pNo]=sltNo;
+				//printf("slit baslangic no:%d \n",i);
+				calismaModu=11;
 				break;
 		}
-	}
-	while(1){
-		ttyOku();	
 	}
 	
 	while(1)
@@ -308,45 +372,9 @@ dondur:
 				break;
 		}
 	}
-	
-		
-/*	dondurt++;
-	if(dondurt==9) dondurt=0;
-	goto dondur;*/
-	//}
-	
-	/*printf("**************KOMUTLAR**************\n");
-	printf("Kalibrasyon için 'c'\n");
-	printf("Goruntuyu dondurmek için 'a'\n");
-	do{
-		i=RS232_PollComport(cport_nr,&uartBuf[0],1);
-		if(i>0)
-			printf("i:%d - gelen: %c\n",i,uartBuf[0]);
-	}while(i==0);
-	printf("i:%d - gelen: %c\n",i,uartBuf[0]);
-	if(uartBuf[0]=='c')
-	{
-ekranSec:
-		printf("Ekran seçin(0-16): ");
-		do{
-			i=RS232_PollComport(cport_nr,&uartBuf[0],1);
-			printf("i:%d\n",i);
-		}while(i==-1);
-		if(isdigit(uartBuf[0])){
-		}
-		else{
-			printf("0 - 16 arasi sayi girilmeli\n");
-			goto ekranSec;
-		}
-	}else if(uartBuf[0]=='a'){
-	 goto ekranSec;
-	}
-	*/
+cikis:
 	cleanUp();
-	//dondurt++;
-	//if(dondurt==9) dondurt=0;
-	//	goto dondur;
-	return res;
+	return 0;
 }
 
 
@@ -630,11 +658,47 @@ char * pch,i;
 	} 
 	for (i = 0; i < 17; i++)
     {
-        fprintf(ofsetDosyasi, "%d,", offsetler[i] );
+        fprintf(ofsetDosyasi, "%d,", &offsetler[i] );
 
     }
 	fclose(ofsetDosyasi);
 }
+
+
+void dataOku(int *dtPointer, unsigned char *dosyaAdi)
+{
+FILE *dosya;
+char i;
+	dosya = fopen(dosyaAdi, "r+"); 
+	if (dosya == NULL ) 
+	{   
+	  printf("Error! Could not open file\n"); 
+	  exit(-1); // must include stdlib.h 
+	} 
+	for (i = 0; i < EKRANADEDI; i++){
+        fscanf(dosya, "%d,", (dtPointer+i));
+    }
+	fclose(dosya);
+}
+
+void dataYaz( signed int *dtPointer,unsigned char *dosyaAdi)
+{
+FILE *dosya;
+char i;
+	dosya  = fopen(dosyaAdi, "w"); // 
+	if (dosya == NULL ) 
+	{   
+	  printf("Error! Could not open file\n"); 
+	  exit(-1); // must include stdlib.h 
+	} 
+	for (i = 0; i < 17; i++)
+    {
+        fprintf(dosya, "%d,", dtPointer+i );
+
+    }
+	fclose(dosya);
+}
+
 void ttyleriHazirla(void)
 {
 int i;
@@ -862,19 +926,14 @@ uint16_t ttyOku(void)
 {
 FILE *ofsetDosyasi;
 char * pch,i,buffer[50];
-uint16_t dt[20];
+uint16_t dt;
 	ofsetDosyasi  = fopen("/dev/tty", "r+"); // 
 	if (ofsetDosyasi == NULL ) 
 	{   
 	  printf("Error! Could not open file\n"); 
 	  exit(-1); // must include stdlib.h 
 	} 
-	//printf("Projektor No,Slit No,on/off\n");
-	fscanf(ofsetDosyasi, "%d", &dt[0] );
-	printf("%d", dt[0] );
-    //sprintf(buffer,"%d-%d-%d  \n", dt[0],dt[1],dt[2]);
-	//write(uzaktty,buffer,sizeof(buffer));
-//	slitDoldur(dt[0],dt[1],dt[2]);
+	fscanf(ofsetDosyasi, "%d", &dt );
 	fclose(ofsetDosyasi);
-	return dt[0];
+	return dt;
 }
