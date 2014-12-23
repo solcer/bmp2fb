@@ -9,7 +9,8 @@
 
 //selim Ölçer 14/10/2014 bmp to framebuffer
 //27.11.2014 staticGoruntu.c
-//23.12.2014 slitleri manual ayarlayip 3d goruntu verebilen kod.
+//23.12.2014 main.c
+
 #include <assert.h>
 #include <errno.h>
 #include <stdbool.h>
@@ -102,13 +103,15 @@ uint8_t *image;
 unsigned char *data[EKRANADEDI];				//resim datasýný içeren deðiþken
 int projektorSlitNolari[EKRANADEDI];
 
-void handler (int sig)
-{
+//uart komutlari
+#define COMMANDSLITDISTANCE	3
+#define COMMANDSLITSIZE		2
+#define COMMANDPOSITION		1
 
+
+void handler (int sig){
   printf ("nexiting...(%d)n", sig);
-
   exit (0);
-
 }
 
  
@@ -146,6 +149,9 @@ int main(int argc, char *argv[])
 
 	//unsigned char uartBuf[4096];
 	char mode[]={'8','N','1',0};
+	uint16_t headPosX;
+	uint16_t headPosY;
+	uint16_t headPosZ;
 	
 	uint8_t pNo;
 	uint16_t sltNo;
@@ -189,8 +195,33 @@ int main(int argc, char *argv[])
 	}
 	
 	while(1){
-		//RS232_PollComport(cport_nr,&uartBuffer[0],15);
-		switch(calismaModu){
+		RS232_PollComport(cport_nr,&buffer[0],15);
+		if(buffer[0] =='U' && buffer[1]=='U')
+		{
+				switch(buffer[2]){
+					case COMMANDPOSITION:
+						//printf("COMMANDPOSITION\n");
+						headPosX=(buffer[4]<<8)&0xff00 | buffer[3];
+						headPosY=(buffer[7]<<8)&0xff00 | buffer[8];
+						headPosZ=(buffer[12]<<8)&0xff00 | buffer[11];
+						printf("%d\n",headPosX);
+						frameBufferTemizle();
+						for(i=0;i<EKRANADEDI;i++){
+							slitDoldur(i,projektorSlitNolari[i]-248+headPosX+PIXELADIMI,0,SOLGOZRESMI);
+							slitDoldur(i,projektorSlitNolari[i]-248+headPosX+PIXELADIMI+IKIGOZMESAFESI,0,SAGGOZRESMI);	//2.slit
+							slitDoldur(i,projektorSlitNolari[i]-248+headPosX,1,SOLGOZRESMI);
+							slitDoldur(i,projektorSlitNolari[i]-248+headPosX+IKIGOZMESAFESI,1,SAGGOZRESMI);		//2.slitler
+						}
+						break;
+					case COMMANDSLITSIZE:
+						printf("COMMANDSLITSIZE\n");
+						break;
+					case COMMANDSLITDISTANCE:
+						printf("COMMANDSLITDISTANCE\n");
+						break;
+				}
+		}
+	/*	switch(calismaModu){
 			case 0:						//baslangic menusu
 				printf("\n0: slitleri ayarlar");
 				printf("\n1: ekran kaydirma ");
@@ -306,7 +337,7 @@ int main(int argc, char *argv[])
 				//printf("slit baslangic no:%d \n",i);
 				calismaModu=11;
 				break;
-		}
+		}*/
 	}
 	
 cikis:
