@@ -62,7 +62,7 @@ void dataOku(int * ,unsigned char *);
 
 #define EKRANADEDI 17
 #define SLITSIZE	13
-#define PIXELADIMI	8
+#define PIXELADIMI	1
 #define IKIGOZMESAFESI	25
 //signed int offsetler[EKRANADEDI]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 //signed int offsetler[EKRANADEDI]={0,111,50,143,36,32,45,139,151,54,44,115,59,47,51,30,53};
@@ -221,8 +221,8 @@ int main(int argc, char *argv[])
 						i = getch();
 						switch(i){
 							case 67:
-								printf("\r-->           ");
 								sltNo-=PIXELADIMI;
+								printf("\r-->           %d    ",projektorSlitNolari[i]+sltNo);
 								for(i=0;i<EKRANADEDI;i++){
 									slitDoldur(i,projektorSlitNolari[i]+sltNo+PIXELADIMI,0,SOLGOZRESMI);
 									slitDoldur(i,projektorSlitNolari[i]+sltNo+PIXELADIMI+IKIGOZMESAFESI,0,SAGGOZRESMI);	//2.slit
@@ -231,8 +231,8 @@ int main(int argc, char *argv[])
 								}
 								break;
 							case 68:								
-								printf("\r<--           ");
 								sltNo+=PIXELADIMI;
+								printf("\r<--           %d    ",projektorSlitNolari[i]+sltNo);
 								for(i=0;i<EKRANADEDI;i++){
 									slitDoldur(i,projektorSlitNolari[i]+sltNo-PIXELADIMI,0,SOLGOZRESMI);
 									slitDoldur(i,projektorSlitNolari[i]+sltNo-PIXELADIMI+IKIGOZMESAFESI,0,SAGGOZRESMI);		//2.slitler

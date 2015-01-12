@@ -170,8 +170,10 @@ int main(int argc, char *argv[])
 
 	ttyleriHazirla();
 	frameBufferTemizle();
-	//resimleriYenile(1);
-	//tumFrameBufferYenile();
+	resimleriYenile(1);
+	tumFrameBufferYenile();
+	getchar();
+	return 0;
 dondur:
 	while(1)
 	{
@@ -503,7 +505,7 @@ i=fbNo;
 void tumFrameBufferYenile(void){
 int i,row,col;
 long int location = 0;
-	printf("Framebufferlar yenileniyor...");
+	//printf("Framebufferlar yenileniyor...");
 	for(i=0;i<EKRANADEDI;i++){ 				//resimleri ekranlara basan kisim
 		if( finfo[i].line_length==1600)			//frame buffer'ın biri farklı onu düzgün göstermek için burayı yazıyorum
 		{
@@ -527,7 +529,7 @@ long int location = 0;
 			}
 		}		
 	}
-	printf("FRAMEBUFFERLAR OK...\n");
+	//printf("FRAMEBUFFERLAR OK...\n");
 }
 /*
 void frameBufferTemizle(void){

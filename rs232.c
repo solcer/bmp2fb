@@ -688,3 +688,7 @@ void RS232_cputs(int comport_number, const char *text)  /* sends a string to ser
 }
 
 
+void RS232_flush(int comport_number)					/*seri portta bekleyen tüm iceriği siler*/
+{
+	tcflush(Cport[comport_number],TCIOFLUSH );
+}

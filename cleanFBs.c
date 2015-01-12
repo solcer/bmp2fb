@@ -172,6 +172,8 @@ int main(int argc, char *argv[])
 	frameBufferTemizle();
 	//resimleriYenile(1);
 	//tumFrameBufferYenile();
+	//getchar();
+	return 0;
 dondur:
 	while(1)
 	{
@@ -503,7 +505,7 @@ i=fbNo;
 void tumFrameBufferYenile(void){
 int i,row,col;
 long int location = 0;
-	printf("Framebufferlar yenileniyor...");
+	//printf("Framebufferlar yenileniyor...");
 	for(i=0;i<EKRANADEDI;i++){ 				//resimleri ekranlara basan kisim
 		if( finfo[i].line_length==1600)			//frame buffer'ın biri farklı onu düzgün göstermek için burayı yazıyorum
 		{
@@ -527,7 +529,7 @@ long int location = 0;
 			}
 		}		
 	}
-	printf("FRAMEBUFFERLAR OK...\n");
+	//printf("FRAMEBUFFERLAR OK...\n");
 }
 /*
 void frameBufferTemizle(void){
@@ -552,19 +554,19 @@ long int location = 0;
 	for(i=0;i<EKRANADEDI;i++){ 				//resimleri ekranlara basan kisim
 		if( finfo[i].line_length==1600)			//frame buffer'ın biri farklı onu düzgün göstermek için burayı yazıyorum
 		{
-			//printf("1600 de\n");
+			printf("ekran 1600:%d \n",i);
 			for (row = 0; row != 600; row++) {		//480
 				for (col = 0; col != 800; col++) {		//848
 					image = (uint8_t *) bmp[i].bitmap;					
 					location = (col+offsetler[i])*2+(row*finfo[i].line_length);					//her bir pixel 2 byte olduğu için col*2 yaptım.
-					*((uint16_t*)(fbp[i] + location)) =0;// ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
+					*((uint16_t*)(fbp[i] + location)) =0x10;// ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
 				}
 			}
 		}else{
-			for (row = 0; row != bmp[0].height; row++) {		//480
-				for (col = 0; col != bmp[0].width; col++) {		//848
+			for (row = 0; row != 480; row++) {		//480
+				for (col = 0; col != 848; col++) {		//848
 					location = (col+offsetler[i])*2+(row*finfo[i].line_length);					//her bir pixel 2 byte olduğu için col*2 yaptım.
-					*((uint16_t*)(fbp[i] + location)) = 0;//((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
+					*((uint16_t*)(fbp[i] + location)) = 0x10;//((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
 				}
 			}
 		}		

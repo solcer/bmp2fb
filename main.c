@@ -20,6 +20,8 @@
 #include <string.h>
 #include <sys/stat.h>
 #include "libnsbmp.c"
+#include "commands.h"
+
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -63,15 +65,15 @@ void framebufferAyarla(unsigned char );
 uint8_t loadImage (char bufNo,char *imageName);
 void tumFrameBufferlariYenile(char pNo);
 void tekFrameBufferiYenile(char pNo);
+void sendOfsetDataToPc(void);
 #define EKRANADEDI 17
-#define SLITSIZE	13
+unsigned char SLITSIZE =	13;
 #define PIXELADIMI	8
 #define IKIGOZMESAFESI	25
-//signed int offsetler[EKRANADEDI]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-//signed int offsetler[EKRANADEDI]={0,111,50,143,36,32,45,139,151,54,44,115,59,47,51,30,53};
-//signed int offsetler[EKRANADEDI]={0,17,50,48,36,32,45,44,151,54,44,20,59,47,51,30,53};			//2. ayar
   signed int offsetler[EKRANADEDI];//={0,18,50,48,36,32,45,44,55,54,44,20,59,47,51,30,53};			//3. ayar
-
+//pixelData.dat :48,36,37,33,29,30,22,16,22,25,1,3,13,16,6,0,7,
+//300,290,286,287,283,286,272,271,278,281,255,259,273,274,255,254,256,
+//46,36,32,33,29,32,18,17,24,27,1,5,19,20,1,0,2,
 
 bmp_bitmap_callback_vt bitmap_callbacks = {
 	bitmap_create,
@@ -103,14 +105,8 @@ char *fbp[EKRANADEDI] ;
 uint8_t *image;
 
 unsigned char *data[EKRANADEDI];				//resim datasýný içeren deðiþken
-int projektorSlitNolari[EKRANADEDI];
+int projektorSlitNolari[EKRANADEDI];  //=296,284,285,281,277,278,270,264,270,273,249,251,261,264,254,248,255,
 
-//uart komutlari
-#define COMMANDVERTICALCALIBRATIONSETPROJECTOR	5
-#define COMMANDVERTICALCALIBRATION	4
-#define COMMANDSLITDISTANCE			3
-#define COMMANDSLITSIZE				2
-#define COMMANDPOSITION				1
 
 
 void handler (int sig){
@@ -147,7 +143,8 @@ int main(int argc, char *argv[])
 
 	long int location = 0;
 	
-	uint8_t buffer[100];
+	uint8_t buffer[100],outputBuffer[100];
+	
 	int cport_nr=22;        /* /dev/ttyAMA0 */
 	int bdrate=115200;       /* 9600 baud */
 
@@ -159,6 +156,7 @@ int main(int argc, char *argv[])
 	
 	uint8_t pNo;
 	uint16_t sltNo;
+	uint16_t oncekiSltNo[EKRANADEDI];
 	
 	ofsetleriAl();						//ofsetler.dat dosyasindan ofsetleri alýr
 	uzaktty =open("/dev/tty",O_RDWR);//O_RDONLY);
@@ -179,6 +177,7 @@ int main(int argc, char *argv[])
 	  fbfd[i]=0;
 	  tty[i]=0;
 	  screensize[i]=0;
+	  oncekiSltNo[i]=0;
 	}
 	
 	if ((getuid ()) != 0) {
@@ -198,73 +197,88 @@ int main(int argc, char *argv[])
 	
 	
  	dataOku(&projektorSlitNolari[0],"./pixelData.dat");	
-	for(i=0;i<EKRANADEDI;i++){
-		slitDoldur(i,projektorSlitNolari[i],1,SOLGOZRESMI);
-		slitDoldur(i,projektorSlitNolari[i]+IKIGOZMESAFESI,1,SAGGOZRESMI);
-	}
-	
+//	for(i=0;i<EKRANADEDI;i++){
+//		slitDoldur(i,projektorSlitNolari[i],1,SOLGOZRESMI);
+//		slitDoldur(i,projektorSlitNolari[i]+IKIGOZMESAFESI,1,SAGGOZRESMI);
+//	}
+	RS232_flush(cport_nr);			//portta bekleyen datalarý temizle
 	while(1){
 		RS232_PollComport(cport_nr,&buffer[0],15);
 		if(buffer[0] =='U' && buffer[1]=='U')
 		{
-				printf("command:%d\n",buffer[2]);
-				switch(buffer[2]){
-					case COMMANDPOSITION:
-						//printf("COMMANDPOSITION\n");
-						headPosX=(buffer[4]<<8)&0xff00 | buffer[3];
-						headPosY=(buffer[7]<<8)&0xff00 | buffer[8];
-						headPosZ=(buffer[12]<<8)&0xff00 | buffer[11];
-						printf("%d\n",headPosX);
-						frameBufferTemizle();
-						for(i=0;i<EKRANADEDI;i++){
-							slitDoldur(i,projektorSlitNolari[i]-248+headPosX+PIXELADIMI,0,SOLGOZRESMI);
-							slitDoldur(i,projektorSlitNolari[i]-248+headPosX+PIXELADIMI+IKIGOZMESAFESI,0,SAGGOZRESMI);	//2.slit
-							slitDoldur(i,projektorSlitNolari[i]-248+headPosX,1,SOLGOZRESMI);
-							slitDoldur(i,projektorSlitNolari[i]-248+headPosX+IKIGOZMESAFESI,1,SAGGOZRESMI);		//2.slitler
-						}
-						break;
-					case COMMANDVERTICALCALIBRATIONSETPROJECTOR:
-						switch(buffer[4]){
-							case 1:
-								//yukarý kaydir komutu geldiyse 
-								//gelen ofset degeri kadar offseti kaydir
-								printf("yukari");
-								offsetler[buffer[3]]+=buffer[5];
-								break;
-							case 2:
-								//asagi komutu
-								printf("asagi");
-								offsetler[buffer[3]]-=buffer[5];
-								break;
-							default:
-								break;
-						}
-						tekFrameBufferiYenile(buffer[3]);
-						break;
-					case COMMANDVERTICALCALIBRATION:
+			// printf("buffer[]= ");
+			// for(i=0;i<15;i++){
+				// printf("%d,",buffer[i]);
+			// }
+			// printf("\n");
+			
+			switch(buffer[2]){
+				case COMMANDPOSITION:							//pc'den kafa posizyonlarýný alýr
+					//printf("COMMANDPOSITION\n");
+					headPosX=(buffer[4]<<8)&0xff00 | buffer[3];
+					if(headPosX>390) headPosX=390;
+					//if(headPosX<90) headPosX=90;
+					
+					headPosY=(buffer[7]<<8)&0xff00 | buffer[8];
+					headPosZ=(buffer[12]<<8)&0xff00 | buffer[11];
+					printf("Head Pos: %d   onceki Slit Pos:%d , yeni sltNo:%d   \r",headPosX,oncekiSltNo[0], projektorSlitNolari[0]+headPosX);
+					//frameBufferTemizle();
+					for(i=0;i<EKRANADEDI;i++){
+						slitDoldur(i,oncekiSltNo[i],0,SOLGOZRESMI);	//1. resimi sil
+						slitDoldur(i,oncekiSltNo[i]+IKIGOZMESAFESI,0,SAGGOZRESMI);	//2. resimi sil
+						oncekiSltNo[i]=projektorSlitNolari[i]+headPosX;
+						slitDoldur(i,oncekiSltNo[i],1,SOLGOZRESMI);
+						slitDoldur(i,oncekiSltNo[i]+IKIGOZMESAFESI,1,SAGGOZRESMI);		//2.slitler
 						
-							tumFrameBufferlariYenile(buffer[3]);
-							
+						//slitDoldur(i,(projektorSlitNolari[i]-248)+headPosX+PIXELADIMI,0,SOLGOZRESMI);
+						//slitDoldur(i,(projektorSlitNolari[i]-248)+headPosX+PIXELADIMI+IKIGOZMESAFESI,0,SAGGOZRESMI);	//2.slit
+						//slitDoldur(i,(projektorSlitNolari[i]-248)+headPosX,1,SOLGOZRESMI);
+						//slitDoldur(i,(projektorSlitNolari[i]-248)+headPosX+IKIGOZMESAFESI,1,SAGGOZRESMI);		//2.slitler
 						
-						/*for(i=0;i<EKRANADEDI;i++){
-							//tüm slitleri kýrmýzý kalibrasyon resmi ile doldur
-							slitDoldur(i,projektorSlitNolari[i]-248+headPosX+PIXELADIMI,0,2);		//kirmizi kalibrasyon resmi
-							slitDoldur(i,projektorSlitNolari[i]-248+headPosX+PIXELADIMI+IKIGOZMESAFESI,0,2);	//2.slit
-							slitDoldur(i,projektorSlitNolari[i]-248+headPosX,1,2);
-							slitDoldur(i,projektorSlitNolari[i]-248+headPosX+IKIGOZMESAFESI,1,2);		//2.slitler
-						}
-						//kalibre edilecek sliti yeþil olan ile deðiþtir
-						slitDoldur(buffer[3],projektorSlitNolari[buffer[3]]-248+headPosX,1,3);
-						slitDoldur(buffer[3],projektorSlitNolari[buffer[3]]-248+headPosX+IKIGOZMESAFESI,1,3);		//2.slitler
-						*/
-						break;
-					case COMMANDSLITSIZE:
-						printf("COMMANDSLITSIZE\n");
-						break;
-					case COMMANDSLITDISTANCE:
-						printf("COMMANDSLITDISTANCE\n");
-						break;
-				}
+					}
+					break;
+				case COMMANDVERTICALCALIBRATIONSETPROJECTOR:			//projektörlerin yeni ofset degerini al
+					switch(buffer[4]){			//yukarý veya asagi komutu geldi mi kontrol et
+						case 1:
+							//yukarý kaydir komutu geldiyse 
+							//gelen ofset degeri kadar offseti kaydir
+							printf("yukari:%d");
+							offsetler[buffer[3]]+=buffer[5];
+							break;
+						case 2:
+							//asagi komutu
+							printf("asagi");
+							offsetler[buffer[3]]-=buffer[5];
+							break;
+						default:
+							break;
+					}
+					// outputBuffer[0]='U';
+					// outputBuffer[1]='U';
+					// outputBuffer[2]=COMMANDVERTICALCALIBRATIONSETPROJECTOR;
+					sendOfsetDataToPc();
+					//RS232_SendBuf(cport_nr,(char *) &offsetler[0],EKRANADEDI*2);		//offsetler degiskeninini char olarak pc'ye gonder.
+					tekFrameBufferiYenile(buffer[3]);					// secilen projektorun rengini degistir
+					dataYaz(&offsetler[0],"./ofsetler.dat");			
+					break;
+				case COMMANDVERTICALCALIBRATION:
+					sendOfsetDataToPc();
+					tumFrameBufferlariYenile(buffer[3]);
+					break;
+				case COMMANDSLITSIZE:
+					//printf("COMMANDSLITSIZE\n");
+					SLITSIZE=buffer[3];
+					break;
+				case COMMANDSLITDISTANCE:
+					printf("COMMANDSLITDISTANCE\n");
+					break;
+				case COMMANDCLEARSCREEN:
+					frameBufferTemizle();
+					break;
+			}
+			RS232_flush(cport_nr);			//portta bekleyen datalarý temizle
+			for(i=0;i<15;i++)
+				buffer[i]=0;				//buffer i temizle
 		}
 	/*	switch(calismaModu){
 			case 0:						//baslangic menusu
@@ -285,7 +299,7 @@ int main(int argc, char *argv[])
 						goto cikis;
 						break;
 				}
-				break;
+			 	break;
 			case 1:
 				i = getch();
 				if(i=='x'){
@@ -1102,4 +1116,16 @@ static oncekiPNo;
 		}
 	}	
 	oncekiPNo=pNo;
+}
+void sendOfsetDataToPc(void)
+{
+	int cport_nr=22;        /* /dev/ttyAMA0 */
+	char i;
+	RS232_SendByte(cport_nr,'U');		//start byte
+	RS232_SendByte(cport_nr,'U');
+	RS232_SendByte(cport_nr,COMMANDVERTICALCALIBRATIONSETPROJECTOR);	//command
+	for(i=0;i<EKRANADEDI;i++){
+		RS232_SendByte(cport_nr,(unsigned char)(offsetler[i]&0x00ff));
+		RS232_SendByte(cport_nr,(unsigned char)((offsetler[i]&0xff00)>>8));
+	}
 }

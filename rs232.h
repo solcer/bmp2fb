@@ -63,6 +63,7 @@ void RS232_enableDTR(int);
 void RS232_disableDTR(int);
 void RS232_enableRTS(int);
 void RS232_disableRTS(int);
+void RS232_flush(int comport_number);
 
 
 
