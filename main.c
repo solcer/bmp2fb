@@ -68,12 +68,14 @@ void tekFrameBufferiYenile(char pNo);
 void sendOfsetDataToPc(void);
 #define EKRANADEDI 17
 unsigned char SLITSIZE =	13;
+unsigned char  IKIGOZMESAFESI	= 25;
 #define PIXELADIMI	8
-#define IKIGOZMESAFESI	25
   signed int offsetler[EKRANADEDI];//={0,18,50,48,36,32,45,44,55,54,44,20,59,47,51,30,53};			//3. ayar
 //pixelData.dat :48,36,37,33,29,30,22,16,22,25,1,3,13,16,6,0,7,
 //300,290,286,287,283,286,272,271,278,281,255,259,273,274,255,254,256,
 //46,36,32,33,29,32,18,17,24,27,1,5,19,20,1,0,2,
+//45,33,30,30,26,28,18,14,22,25,0,3,16,7,0,1,
+
 
 bmp_bitmap_callback_vt bitmap_callbacks = {
 	bitmap_create,
@@ -270,7 +272,8 @@ int main(int argc, char *argv[])
 					SLITSIZE=buffer[3];
 					break;
 				case COMMANDSLITDISTANCE:
-					printf("COMMANDSLITDISTANCE\n");
+					//printf("COMMANDSLITDISTANCE\n");
+					IKIGOZMESAFESI=buffer[3];
 					break;
 				case COMMANDCLEARSCREEN:
 					frameBufferTemizle();
