@@ -56,7 +56,7 @@ void frameBufferYenile(unsigned char fbNo);
 void ofsetleriAl(void);
 void ofsetleriYaz(void);
 void ttyleriHazirla(void);
-
+void framebufferAyarla(unsigned char );
 #define EKRANADEDI 17
 //signed int offsetler[EKRANADEDI]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 //signed int offsetler[EKRANADEDI]={0,111,50,143,36,32,45,139,151,54,44,115,59,47,51,30,53};
@@ -660,16 +660,18 @@ tekrarOlc:			//ekran çözünürlüğü tutmuyorsa ayarlayıp tekrar buraya gele
 
 			exit(3);
 		}
-		printf("%d. Variable screen fb%d: %dx%d, %dbpp - Fixed screen finfo.smem_len:%d, finfo.line_length:%d\n",i,i, vinfo[i].xres, vinfo[i].yres, vinfo[i].bits_per_pixel, finfo[i].smem_len,finfo[i].line_length);
+		
+		printf("%d. Variable screen fb%d: %dx%d, %dbpp - Fixed screen finfo.smem_len:0x%X, finfo.line_length:0x%X\n",i,i, vinfo[i].xres, vinfo[i].yres, vinfo[i].bits_per_pixel, finfo[i].smem_len,finfo[i].line_length);
 		if(vinfo[i].xres!=848)		//eger resolution tutmuyorsa ayarla
 		{
 			printf("fb%d resolution yanlis. Duzeltiliyor...\n",i);
 			sprintf(&buffer[0],"sudo fbset -fb /dev/fb%d 848x480-60",i);
 			res = system(buffer);
+			framebufferAyarla(i);
+				
 			goto tekrarOlc;
 		}
-
-		// Figure out the size of the screen in bytes
+			// Figure out the size of the screen in bytes
 
 		screensize[i] = vinfo[i].yres_virtual * finfo[i].line_length;
 
@@ -690,4 +692,92 @@ tekrarOlc:			//ekran çözünürlüğü tutmuyorsa ayarlayıp tekrar buraya gele
 
 
 	}
+}
+
+//bu fonksiyonu 800x600 çözünürlük hatasını (özellikle fb5'in)düzeltmek için yaptım.
+void framebufferAyarla(unsigned char fbNo)
+{
+	int xres=848;
+	int yres=480;
+	int nbpp=8;
+	struct fb_var_screeninfo screeninfo;
+	int fbFd;
+	unsigned char *lfb;
+	unsigned char bff[50];
+			
+	sprintf(&bff[0],"/dev/fb%d",fbNo);
+	fbFd=open(bff, O_RDWR);
+	if (fbFd<0)
+	{
+		perror("open");
+		exit(1);
+	}
+	
+	
+	if (ioctl(fbFd, FBIOGET_VSCREENINFO, &screeninfo)<0)
+	{
+		perror("FBIOGET_VSCREENINFO");
+		exit(1);
+	}
+	
+	struct fb_fix_screeninfo fix;
+	if (ioctl(fbFd, FBIOGET_FSCREENINFO, &fix)<0)
+	{
+		perror("FBIOGET_FSCREENINFO");
+		exit(1);
+	}
+	
+	printf("%dk video mem\n", fix.smem_len/1024);
+	lfb=(unsigned char*)mmap(0, fix.smem_len, PROT_WRITE|PROT_READ, MAP_SHARED, fbFd, 0);
+	if (!lfb)
+	{
+		perror("mmap");
+		exit(1);
+	}
+	screeninfo.xres_virtual=screeninfo.xres=xres;
+	screeninfo.yres_virtual=(screeninfo.yres=yres)*2;
+	screeninfo.height=0;
+	screeninfo.width=0;
+	screeninfo.xoffset=screeninfo.yoffset=0;
+	screeninfo.bits_per_pixel=nbpp;
+	
+	
+	
+	if (ioctl(fbFd, FBIOPUT_VSCREENINFO, &screeninfo)<0)
+	{
+		perror("FBIOPUT_VSCREENINFO");
+		// try single buffering
+		screeninfo.yres_virtual=screeninfo.yres=yres;
+		
+		if (ioctl(fbFd, FBIOPUT_VSCREENINFO, &screeninfo)<0)
+		{
+			perror("FBIOPUT_VSCREENINFO 2");
+			exit(1);
+		}
+		puts(" - double buffering not available.");
+	} else
+		puts(" - double buffering available!");
+	
+	
+	ioctl(fbFd, FBIOGET_VSCREENINFO, &screeninfo);
+	
+	if ((screeninfo.xres!=xres) && (screeninfo.yres!=yres) && (screeninfo.bits_per_pixel!=nbpp))
+	{
+		printf("SetMode failed: wanted: %dx%dx%d, got %dx%dx%d\n",
+			xres, yres, nbpp,
+			screeninfo.xres, screeninfo.yres, screeninfo.bits_per_pixel);
+	}
+	
+	printf ("Got screen %dx%d@%d\n", screeninfo.xres, screeninfo.yres, screeninfo.bits_per_pixel);
+	
+	if (ioctl(fbFd, FBIOGET_FSCREENINFO, &fix)<0)
+	{
+		perror("FBIOGET_FSCREENINFO");
+		printf("fb failed\n");
+	}
+	memset(lfb, 0, fix.line_length * screeninfo.yres);
+	
+	//if (ioctl(fbFd, FBIO_BLIT) < 0)
+	//      perror("FBIO_BLIT");
+	
 }
