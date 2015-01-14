@@ -255,6 +255,19 @@ int main(int argc, char *argv[])
 				printf("\r<- sola kaydir, -> saga kaydir. 's' slit no gir. projektor secmek icin 'p'. x cikis. ");
 				i=getch();
 				if(i=='x'){
+					int a=5000;							//baslangic degeri
+					for(i=0;i<EKRANADEDI-1;i++)			//projektorSlitNolari[] icerisindeki en kucuk degeri bul
+					{
+						//a=projektorSlitNolari[i];
+						if(a>projektorSlitNolari[i])
+							a=projektorSlitNolari[i];
+					}
+					for(i=0;i<EKRANADEDI;i++)			// projektorSlitNolari[] 'dan en kucuk degeri cýkar
+					{
+						projektorSlitNolari[i]-=a;
+						printf("%d,",projektorSlitNolari[i]);
+					}
+					dataYaz(&projektorSlitNolari[0],"./pixelData.dat");			//hesaplanan degeri dosyaya yaz
 					printf("Cikis...\n");
 					cleanUp();
 				}
