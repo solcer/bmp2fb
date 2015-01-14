@@ -1,11 +1,4 @@
-/*
- * Copyright 2008 Sean Fox <dyntryx@gmail.com>
- * Copyright 2008 James Bursa <james@netsurf-browser.org>
- *
- * This file is part of NetSurf's libnsbmp, http://www.netsurf-browser.org/
- * Licenced under the MIT License,
- *                http://www.opensource.org/licenses/mit-license.php
- */
+
 
 //selim Ölçer 14/10/2014 bmp to framebuffer
 //27.11.2014 staticGoruntu.c
@@ -21,6 +14,7 @@
 #include <sys/stat.h>
 #include "libnsbmp.c"
 #include "commands.h"
+#include "constants.h"
 
 
 #include <unistd.h>
@@ -34,8 +28,7 @@
 #include <unistd.h>
 #include <termios.h>
 
-#define BYTES_PER_PIXEL 4
-#define TRANSPARENT_COLOR 0xffffffff
+
 
 
 unsigned char *load_file(const char *path, size_t *data_size);
@@ -44,35 +37,29 @@ void *bitmap_create(int width, int height, unsigned int state);
 unsigned char *bitmap_get_buffer(void *bitmap);
 size_t bitmap_get_bpp(void *bitmap);
 void bitmap_destroy(void *bitmap);
-void showBitmap(uint8_t *resim, char *fbPointer);
-uint8_t resimleriYenile(unsigned int sahneNo);			//0. sahne no calibrasyon resmi
 void cleanUp(void);
-void frameBufferTemizle(void);
-void frameBufferYenile(unsigned char fbNo);
-void ofsetleriAl(void);
-void ofsetleriYaz(void);
+
+void frameBufferTemizle(void);						//tum framebufferlarý temizler
+void framebufferAyarla(unsigned char );				//çözünürlüðü bozuk framebufferi tespit edip 848x480 yapar
+void tumFrameBufferlariYenile(char pNo);			//Dikey kalibrasyon ekranýnda tüm framebufferlara bmp[2]'yi yükler.
+void tekFrameBufferiYenile(char pNo);				//Dikey kalibrasyon ekranýnda secilen framebuffer'a farklý resim yükler.
+void slitDoldur(uint8_t projektorNo,uint16_t slit,uint8_t clear,uint8_t resim);		//istenilen pixele slit oluþturur
+
 void ttyleriHazirla(void);
-void slitYenile(unsigned int slitNo, unsigned char *dt);
-void fillSlit(unsigned char slit,unsigned int topOffset, unsigned int bottomOffset);
-void slitDoldur(uint8_t projektorNo,uint16_t slit,uint8_t clear,uint8_t resim);
-#define SOLGOZRESMI	0
-#define SAGGOZRESMI 1
-int getch(void);
 uint16_t ttyOku(void);
+int getch(void);
+
 void dataYaz(int * ,unsigned char *);
 void dataOku(int * ,unsigned char *);
-void framebufferAyarla(unsigned char );
-uint8_t loadImage (char bufNo,char *imageName);
-void tumFrameBufferlariYenile(char pNo);
-void tekFrameBufferiYenile(char pNo);
+uint8_t loadImage (char bufNo,char *imageName);			//bmp registerine istenilen resimi yükler
+
 void sendOfsetDataToPc(void);
 void sendProjektorSlitNolariToPc(void);
 
-#define EKRANADEDI 17
+
 unsigned char SLITSIZE =	13;
-#define PIXELADIMI	8
-#define IKIGOZMESAFESI	25
-  signed int offsetler[EKRANADEDI];//={0,18,50,48,36,32,45,44,55,54,44,20,59,47,51,30,53};			//3. ayar
+
+signed int dikeyOfsetler[EKRANADEDI];//={0,18,50,48,36,32,45,44,55,54,44,20,59,47,51,30,53};			//3. ayar
 //pixelData.dat :48,36,37,33,29,30,22,16,22,25,1,3,13,16,6,0,7,
 //300,290,286,287,283,286,272,271,278,281,255,259,273,274,255,254,256,
 //46,36,32,33,29,32,18,17,24,27,1,5,19,20,1,0,2,
@@ -88,9 +75,6 @@ bmp_bitmap_callback_vt bitmap_callbacks = {
 bmp_result code;
 bmp_image bmp[EKRANADEDI];
 
-
-
-/* framebuffer */
 
 int calismaModu;
 int uzaktty;
@@ -162,7 +146,9 @@ int main(int argc, char *argv[])
 	uint16_t sltNo;
 	uint16_t oncekiSltNo[EKRANADEDI];
 	
-	ofsetleriAl();						//ofsetler.dat dosyasindan ofsetleri alýr
+	dataOku(&projektorSlitNolari[0],"./pixelData.dat");	
+	dataOku(&dikeyOfsetler[0],"./ofsetler.dat");
+	
 	uzaktty =open("/dev/tty",O_RDWR);//O_RDONLY);
 	if(uzaktty==-1)
 	{
@@ -193,14 +179,12 @@ int main(int argc, char *argv[])
 
 	ttyleriHazirla();
 	frameBufferTemizle();
-	//resimleriYenile(0);
 	loadImage(0,"/home/pi/selim/bmp2fb/AllContent/bmps/image0.bmp");
 	loadImage(1,"/home/pi/selim/bmp2fb/AllContent/bmps/image1.bmp");
 	loadImage(2,"/home/pi/selim/bmp2fb/calibrationPictureRed.bmp");
 	loadImage(3,"/home/pi/selim/bmp2fb/calibrationPictureGreen.bmp");
 	
 	
- 	dataOku(&projektorSlitNolari[0],"./pixelData.dat");	
 //	for(i=0;i<EKRANADEDI;i++){
 //		slitDoldur(i,projektorSlitNolari[i],1,SOLGOZRESMI);
 //		slitDoldur(i,projektorSlitNolari[i]+IKIGOZMESAFESI,1,SAGGOZRESMI);
@@ -247,19 +231,19 @@ int main(int argc, char *argv[])
 							//yukarý kaydir komutu geldiyse 
 							//gelen ofset degeri kadar offseti kaydir
 							printf("yukari:%d");
-							offsetler[buffer[3]]+=buffer[5];
+							dikeyOfsetler[buffer[3]]+=buffer[5];
 							break;
 						case 2:
 							//asagi komutu
 							printf("asagi");
-							offsetler[buffer[3]]-=buffer[5];
+							dikeyOfsetler[buffer[3]]-=buffer[5];
 							break;
 						default:
 							break;
 					}
 					sendOfsetDataToPc();
 					tekFrameBufferiYenile(buffer[3]);					// secilen projektorun rengini degistir
-					dataYaz(&offsetler[0],"./ofsetler.dat");			
+					dataYaz(&dikeyOfsetler[0],"./ofsetler.dat");			
 					break;
 				case COMMANDVERTICALCALIBRATION:
 					sendOfsetDataToPc();
@@ -291,123 +275,6 @@ int main(int argc, char *argv[])
 			for(i=0;i<15;i++)
 				buffer[i]=0;				//buffer i temizle
 		}
-	/*	switch(calismaModu){
-			case 0:						//baslangic menusu
-				printf("\n0: slitleri ayarlar");
-				printf("\n1: ekran kaydirma ");
-				printf("\nx: cikis \n");
-				i = getch();
-				switch(i){
-					case '0':		
-						calismaModu=10;
-						//frameBufferTemizle();
-						break;
-					case '1':
-						printf("\n<-- & -->\n");
-						calismaModu=1;
-						break;
-					case 'x':				//'x' harfi
-						goto cikis;
-						break;
-				}
-			 	break;
-			case 1:
-				i = getch();
-				if(i=='x'){
-					calismaModu=0;
-				}
-				if(i==27){			//oklari bul
-					i = getch();
-					if(i==91){
-						i = getch();
-						switch(i){
-							case 67:
-								printf("\r-->           ");
-								sltNo-=PIXELADIMI;
-								for(i=0;i<EKRANADEDI;i++){
-									slitDoldur(i,projektorSlitNolari[i]+sltNo+PIXELADIMI,0,SOLGOZRESMI);
-									slitDoldur(i,projektorSlitNolari[i]+sltNo+PIXELADIMI+IKIGOZMESAFESI,0,SAGGOZRESMI);	//2.slit
-									slitDoldur(i,projektorSlitNolari[i]+sltNo,1,SOLGOZRESMI);
-									slitDoldur(i,projektorSlitNolari[i]+sltNo+IKIGOZMESAFESI,1,SAGGOZRESMI);		//2.slitler
-								}
-								break;
-							case 68:								
-								printf("\r<--           ");
-								sltNo+=PIXELADIMI;
-								for(i=0;i<EKRANADEDI;i++){
-									slitDoldur(i,projektorSlitNolari[i]+sltNo-PIXELADIMI,0,SOLGOZRESMI);
-									slitDoldur(i,projektorSlitNolari[i]+sltNo-PIXELADIMI+IKIGOZMESAFESI,0,SAGGOZRESMI);		//2.slitler
-									slitDoldur(i,projektorSlitNolari[i]+sltNo,1,SOLGOZRESMI);
-									slitDoldur(i,projektorSlitNolari[i]+sltNo+IKIGOZMESAFESI,1,SAGGOZRESMI);		//2.slitler
-								}
-								break;
-						}
-					}
-				}
-				break;
-			case 10:
-				printf("\n******p:projektor no gir: ");
-				pNo=ttyOku();
-				//printf("%d. projektor\n",pNo);
-				printf("\n");
-				calismaModu=11;	
-				break;
-			case 11:
-				printf("\r<- sola kaydir, -> saga kaydir. 's' slit no gir. projektor secmek icin 'p'. x cikis. ");
-				i=getch();
-				if(i=='x'){
-					printf("Cikis...\n");
-					cleanUp();
-				}
-				if(i=='p'){			//'p'
-					//printf("p geldi mode 2\n");
-					dataYaz(&projektorSlitNolari[0],"./pixelData.dat");	
-					for(i=0;i<EKRANADEDI;i++){
-						printf("%d,",projektorSlitNolari[i]);
-					}
-					calismaModu=10;
-					break;
-				}
-				if(i=='s'){			//'s'
-					calismaModu=12;
-					break;
-				}
-				if(i==27){			//oklari bul
-					i = getch();
-					if(i==91){
-						i = getch();
-						switch(i){
-							case 67:
-								printf("--> ");
-								sltNo--;
-								printf("slit:%d",sltNo);
-								slitDoldur(pNo,sltNo+1,0,SOLGOZRESMI);
-								slitDoldur(pNo,sltNo,1,SOLGOZRESMI);
-								projektorSlitNolari[pNo]=sltNo;
-								break;
-							case 68:								
-								printf("<-- ");
-								sltNo++;
-								printf("slit:%d",sltNo);
-								slitDoldur(pNo,sltNo-1,0,SOLGOZRESMI);
-								//printf("yaz");
-								slitDoldur(pNo,sltNo,1,SOLGOZRESMI);
-								projektorSlitNolari[pNo]=sltNo;
-								break;
-						}
-					}
-				}
-				break;
-			case 12:
-				printf("Slit baslangic no gir: ");
-				slitDoldur(pNo,sltNo,0,SOLGOZRESMI);
-				sltNo=ttyOku();
-				slitDoldur(pNo,sltNo,1,SOLGOZRESMI);
-				projektorSlitNolari[pNo]=sltNo;
-				//printf("slit baslangic no:%d \n",i);
-				calismaModu=11;
-				break;
-		}*/
 	}
 	
 cikis:
@@ -504,7 +371,7 @@ void bitmap_destroy(void *bitmap)
 	free(bitmap);
 }
 
-//tek bir resimi buffer'a yukler
+//tek bir resimi istenilen buffer'a yukler
 uint8_t loadImage (char bufNo,char *imageName)
 {
 size_t size;
@@ -542,91 +409,6 @@ unsigned short res = 0;
 	}
 	printf("OK.\n");
 }
-uint8_t resimleriYenile(unsigned int sahneNo){
-int i;
-uint8_t buffer[128];
-size_t size;
-unsigned short res = 0;
-	printf("resimler yenileniyor...");
-	for(i=0;i<2;i++)					//resimleri import eden kýsým.
-	{
-		// create our bmp image 
-		bmp_create(&bmp[i], &bitmap_callbacks);
-		// load file into memory 
-	
-		//sprintf(&buffer[0],"/home/pi/selim/bmp2fb/AllContent/bmps/img%d.bmp",i+1);
-		sprintf(&buffer[0],"/home/pi/selim/bmp2fb/AllContent/bmps/image%d.bmp",i);
-		//sprintf(&buffer[0],"/home/pi/selim/bmp2fb/calibrationPicture.bmp");
-		
-		data[i] = load_file(buffer, &size);
-		// analyse the BMP 
-		code = bmp_analyse(&bmp[i], size, data[i]);
-		if (code != BMP_OK) {
-			warning("bmp_analyse", code);
-			res = 1;
-			//goto cleanup;
-			cleanUp();
-			return 0;
-		}
-		// decode the image
-		code = bmp_decode(&bmp[i]);
-		// code = bmp_decode_trans(&bmp, TRANSPARENT_COLOR); 
-		if (code != BMP_OK) {
-			warning("bmp_decode", code);
-			// allow partially decoded images 
-			if (code != BMP_INSUFFICIENT_DATA) {
-				res = 1;
-				cleanUp();
-				return 0;
-			}	
-		}
-	}
-	printf("OK.\n");
-}
-/*uint8_t resimleriYenile(unsigned int sahneNo){
-int i;
-uint8_t buffer[128];
-size_t size;
-unsigned short res = 0;
-	printf("resimler yenileniyor...");
-	for(i=0;i<EKRANADEDI;i++)					//resimleri import eden kýsým.
-	{
-		// create our bmp image 
-		bmp_create(&bmp[i], &bitmap_callbacks);
-		// load file into memory 
-		if(sahneNo==0)
-		{
-			sprintf(&buffer[0],"/home/pi/selim/bmp2fb/AllContent/bmps/img1.bmp");
-			//sprintf(&buffer[0],"/home/pi/selim/bmp2fb/AllContent/bmps/image0.bmp");
-			//sprintf(&buffer[0],"/home/pi/selim/bmp2fb/calibrationPicture.bmp");
-		}else{
-			sprintf(&buffer[0],"/home/pi/selim/bmp2fb/AllContent/v%d/samplescreen%d.bmp",sahneNo-1,i);
-		}
-		data[i] = load_file(buffer, &size);
-		// analyse the BMP 
-		code = bmp_analyse(&bmp[i], size, data[i]);
-		if (code != BMP_OK) {
-			warning("bmp_analyse", code);
-			res = 1;
-			//goto cleanup;
-			cleanUp();
-			return 0;
-		}
-		// decode the image
-		code = bmp_decode(&bmp[i]);
-		// code = bmp_decode_trans(&bmp, TRANSPARENT_COLOR); 
-		if (code != BMP_OK) {
-			warning("bmp_decode", code);
-			// allow partially decoded images 
-			if (code != BMP_INSUFFICIENT_DATA) {
-				res = 1;
-				cleanUp();
-				return 0;
-			}	
-		}
-	}
-	printf("OK.\n");
-}*/
 void cleanUp(void){
 	int i;
 	// clean up 
@@ -642,104 +424,19 @@ void cleanUp(void){
 	}
 }
 
-
-void frameBufferYenile(unsigned char fbNo)
-{
-int i,row,col;
-long int location = 0;
-i=fbNo;
-	if( finfo[i].line_length==1600)			//frame buffer'ýn biri farklý onu düzgün göstermek için burayý yazýyorum
-	{
-		//printf("1600 de\n");
-		for (row = 0; row != 600; row++) {		//480
-			for (col = 0; col != 800; col++) {		//848
-				image = (uint8_t *) bmp[i].bitmap;
-				size_t z = (row * 800 + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel baþlangýcý hesaplanýyor.
-				location = (col+offsetler[i])*2+(row*finfo[i].line_length);					//her bir pixel 2 byte olduðu için col*2 yaptým.
-				*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
-			}
-		}
-	}else{
-		for (row = 0; row != bmp[0].height; row++) {		//480
-			for (col = 0; col != bmp[0].width; col++) {		//848
-				image = (uint8_t *) bmp[i].bitmap;
-				size_t z = (row * bmp[i].width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel baþlangýcý hesaplanýyor.
-				location = (col+offsetler[i])*2+(row*finfo[i].line_length);					//her bir pixel 2 byte olduðu için col*2 yaptým.
-				*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
-			}
-		}
-	}
-}
-
-
-/*
-void frameBufferTemizle(void){
-int i,y,x;	
-long int location = 0;
-	for(y=0;y<480;y++)				////ekrana baþlangýç rengi veren kýsým
-	{
-			for(x=0;x<finfo[0].line_length;x++)
-			{
-					//   pixel=0xf8;
-					for(i=0;i<EKRANADEDI;i++)
-					{
-							location = x+(y*finfo[i].line_length);
-							*((uint16_t*)(fbp[i] + location))=0;//xaaaa;
-					}
-			}
-	}
-}*/
 void frameBufferTemizle(void){
 int i,row,col;
 long int location = 0;
 	for(i=0;i<EKRANADEDI;i++){ 				//resimleri ekranlara basan kisim
 		for (row = 0; row != 480; row++) {		//480
 			for (col = 0; col != 848; col++) {		//848
-				location = (col+offsetler[i])*2+(row*1696);					//her bir pixel 2 byte olduðu için col*2 yaptým.
+				location = (col+dikeyOfsetler[i])*2+(row*1696);					//her bir pixel 2 byte olduðu için col*2 yaptým.
 				*((uint16_t*)(fbp[i] + location)) = 0;//((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
 				
 			}
 		}
 	}
 }
-
-void ofsetleriAl(void)
-{
-FILE *ofsetDosyasi;
-char * pch,i;
-	ofsetDosyasi  = fopen("./ofsetler.dat", "r+"); // 
-	if (ofsetDosyasi == NULL ) 
-	{   
-	  printf("Error! Could not open file\n"); 
-	  exit(-1); // must include stdlib.h 
-	} 
-	for (i = 0; i < 17; i++)
-    {
-        fscanf(ofsetDosyasi, "%d,", &offsetler[i] );
-
-    }
-	fclose(ofsetDosyasi);
-}
-
-
-void ofsetleriYaz(void)
-{
-FILE *ofsetDosyasi;
-char * pch,i;
-	ofsetDosyasi  = fopen("./ofsetler.dat", "w"); // 
-	if (ofsetDosyasi == NULL ) 
-	{   
-	  printf("Error! Could not open file\n"); 
-	  exit(-1); // must include stdlib.h 
-	} 
-	for (i = 0; i < 17; i++)
-    {
-        fprintf(ofsetDosyasi, "%d,", &offsetler[i] );
-
-    }
-	fclose(ofsetDosyasi);
-}
-
 
 void dataOku(int *dtPointer, unsigned char *dosyaAdi)
 {
@@ -861,78 +558,6 @@ tekrarOlc:			//ekran çözünürlüðü tutmuyorsa ayarlayýp tekrar buraya gelecek
 
 	}
 }
-
-void slitYenile(unsigned int slitNo, unsigned char *dt){
-int i,row,col;
-long int location = 0;
-//int slitSize=13;
-	for (row = 0; row != bmp[0].height; row++) {		//480
-		for (col = 0; col != bmp[0].width; col++) {		//848
-			location = (col+offsetler[i])*2+(row*finfo[i].line_length);					//her bir pixel 2 byte olduðu için col*2 yaptým.
-			*((uint16_t*)(fbp[i] + location)) = 0;//((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
-		}
-	}
-}
-
-void fillSlit(unsigned char slit,unsigned int topOffset, unsigned int bottomOffset)
-{
-unsigned int row,col;
-unsigned char i;
-long int location = 0;
-static unsigned char oncekiSlit=0;
-//	printf("slit:%d\n",slit);
-	/*ilk önce bir önce hazirlanan slitlerin icerigini temizliyorum*/
-	/*****************************************************************/
-	/*for (row = oncekiSlit*SLITSIZE; row < oncekiSlit*SLITSIZE + SLITSIZE; row++) {
-		for (col = 0; col != 848; col++) {
-			for(i=0;i<EKRANADEDI;i++){		
-				location = col*2+(row*finfo[i].line_length);			//her bir pixel 2 byte olduðu için col*2 yaptým.
-				*((uint16_t*)(fbp[i] + location)) = 0;
-			}
-		}
-	}*/
-	/*2. sliti siliyor*/
-	/*for (row = (oncekiSlit+2)*SLITSIZE; row < (oncekiSlit+2)*SLITSIZE + SLITSIZE; row++) {
-		//for (col = 0; col != bmp[0].width; col++) {
-		for (col = 0; col != 848; col++) {
-			for(i=0;i<EKRANADEDI;i++){		
-				location = col*2+(row*finfo[i].line_length);			//her bir pixel 2 byte olduðu için col*2 yaptým.
-				*((uint16_t*)(fbp[i] + location)) = 0;
-			}
-		}
-	}
-	oncekiSlit=slit;				//Bir sonraki adimda onceki slit icerigini silme icin guncellenen slit numarasini oncekiSlit'e yaziyorum
-	/*****************************************************************/
-
-	/*sonra istenilen sliti guncelliyorum*/
-	/*****************************************************************/
-	
-	for (row = slit*SLITSIZE; row < slit*SLITSIZE + SLITSIZE; row++) {
-		for(i=0;i<16;i++){
-			//buraya her bir projektor icin onceden belirlenmis offset degerini bir dosyadan okuyarak offset olarak yazacagim.
-			for (col = 0; col != 848; col++) {
-				image = (uint8_t *) bmp[i].bitmap;
-				size_t z = (row * bmp[i].width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel baþlangýcý hesaplanýyor.
-				location = (col+offsetler[i])*2+(row*finfo[i].line_length);			//her bir pixel 2 byte olduðu için col*2 yaptým.
-				*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
-			}
-		}
-	}
-	/*for (row = (slit+2)*SLITSIZE; row < (slit+2)*SLITSIZE + SLITSIZE; row++) {
-		for(i=0;i<10;i++){
-			//buraya her bir projektor icin onceden belirlenmis offset degerini bir dosyadan okuyarak offset olarak yazacagim.
-			for (col = 0; col != 848-offsetler[i]; col++) {
-				image = (uint8_t *) bmp[i].bitmap;
-				size_t z = (row * bmp[i].width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel baþlangýcý hesaplanýyor.
-				location = col*2+(row*finfo[i].line_length);			//her bir pixel 2 byte olduðu için col*2 yaptým.
-				*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
-			}
-		}
-	}
-	/*****************************************************************/
-}
-
-
 void slitDoldur(uint8_t projektorNo,uint16_t slit,uint8_t clear,uint8_t resim)
 {
 unsigned int row,col;
@@ -948,8 +573,8 @@ slitBaslangici=(projektorNo+10)*SLITSIZE*848 ;
 			//buraya her bir projektor icin onceden belirlenmis offset degerini bir dosyadan okuyarak offset olarak yazacagim.
 			for (col = 0; col != 700; col++) {		//buradaki deger 848'e kadardý. Üstteki bosluklarý almak icin 700'e kadar yazdiriyorum.					
 				size_t z = (slitBaslangici +  ((row-slit) * bmp[resim].width)+  col) * BYTES_PER_PIXEL;
-				//location = (col+offsetler[i])*2+(row*finfo[i].line_length);			//her bir pixel 2 byte olduðu için col*2 yaptým.
-				location = (col+offsetler[i])*2+(row*1696);								//fb5'in line length degisik olduðu icin 1696 sabit girdim 
+				//location = (col+dikeyOfsetler[i])*2+(row*finfo[i].line_length);			//her bir pixel 2 byte olduðu için col*2 yaptým.
+				location = (col+dikeyOfsetler[i])*2+(row*1696);								//fb5'in line length degisik olduðu icin 1696 sabit girdim 
 				*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
 			}
 		}
@@ -957,7 +582,7 @@ slitBaslangici=(projektorNo+10)*SLITSIZE*848 ;
 		for (row = slit; row < slit + SLITSIZE; row++) {
 			//buraya her bir projektor icin onceden belirlenmis offset degerini bir dosyadan okuyarak offset olarak yazacagim.
 			for (col = 0; col != 700; col++) {
-				location = (col+offsetler[i])*2+(row*1696);			//her bir pixel 2 byte olduðu için col*2 yaptým.
+				location = (col+dikeyOfsetler[i])*2+(row*1696);			//her bir pixel 2 byte olduðu için col*2 yaptým.
 				*((uint16_t*)(fbp[i] + location)) = 0;//((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
 			}
 		}	
@@ -1091,7 +716,7 @@ long int location = 0;
 			for (col = 0; col != 848; col++) {		//848
 				image = (uint8_t *) bmp[2].bitmap;
 				size_t z = (row * bmp[2].width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel baþlangýcý hesaplanýyor.
-				location = (col+offsetler[i])*2+(row*1696);					//her bir pixel 2 byte olduðu için col*2 yaptým.
+				location = (col+dikeyOfsetler[i])*2+(row*1696);					//her bir pixel 2 byte olduðu için col*2 yaptým.
 				*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
 			}
 		}	
@@ -1113,7 +738,7 @@ static oncekiPNo;
 		for (col = 0; col != 848; col++) {		//848
 			image = (uint8_t *) bmp[2].bitmap;
 			size_t z = (row * bmp[2].width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel baþlangýcý hesaplanýyor.
-			location = (col+offsetler[i])*2+(row*1696);					//her bir pixel 2 byte olduðu için col*2 yaptým.
+			location = (col+dikeyOfsetler[i])*2+(row*1696);					//her bir pixel 2 byte olduðu için col*2 yaptým.
 			*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
 		}
 	}	
@@ -1122,7 +747,7 @@ static oncekiPNo;
 		for (col = 0; col != 848; col++) {		//848
 			image = (uint8_t *) bmp[3].bitmap;
 			size_t z = (row * bmp[3].width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel baþlangýcý hesaplanýyor.
-			location = (col+offsetler[i])*2+(row*1696);					//her bir pixel 2 byte olduðu için col*2 yaptým.
+			location = (col+dikeyOfsetler[i])*2+(row*1696);					//her bir pixel 2 byte olduðu için col*2 yaptým.
 			*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
 		}
 	}	
@@ -1148,8 +773,8 @@ void sendOfsetDataToPc(void)
 	RS232_SendByte(cport_nr,'U');
 	RS232_SendByte(cport_nr,COMMANDVERTICALCALIBRATIONSETPROJECTOR);	//command
 	for(i=0;i<EKRANADEDI;i++){
-		RS232_SendByte(cport_nr,(unsigned char)(offsetler[i]&0x00ff));
-		RS232_SendByte(cport_nr,(unsigned char)((offsetler[i]&0xff00)>>8));
+		RS232_SendByte(cport_nr,(unsigned char)(dikeyOfsetler[i]&0x00ff));
+		RS232_SendByte(cport_nr,(unsigned char)((dikeyOfsetler[i]&0xff00)>>8));
 	}
 }
 
