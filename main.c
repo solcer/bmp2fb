@@ -44,7 +44,7 @@ void framebufferAyarla(unsigned char );				//çözünürlüðü bozuk framebufferi tesp
 void tumFrameBufferlariYenile(char pNo);			//Dikey kalibrasyon ekranýnda tüm framebufferlara bmp[2]'yi yükler.
 void tekFrameBufferiYenile(char pNo);				//Dikey kalibrasyon ekranýnda secilen framebuffer'a farklý resim yükler.
 void slitDoldur(uint8_t projektorNo,uint16_t slit,uint8_t clear,uint8_t resim);		//istenilen pixele slit oluþturur
-
+void bufferTemizle(unsigned char bufferNo);
 void ttyleriHazirla(void);
 uint16_t ttyOku(void);
 int getch(void);
@@ -285,8 +285,9 @@ int main(int argc, char *argv[])
 				case COMMANDSLITAYARLA:
 					sltNo=((buffer[5]<<8)+ buffer[4]);			//pc'den gelen slit numarasini hesapla
 					pNo=buffer[3];								//hangi projektor?
-					slitDoldur(pNo,sltNo -1,0,SOLGOZRESMI);
-					slitDoldur(pNo,sltNo +1,0,SOLGOZRESMI);
+					//slitDoldur(pNo,sltNo -1,0,SOLGOZRESMI);
+					//slitDoldur(pNo,sltNo +1,0,SOLGOZRESMI);
+					bufferTemizle(pNo);
 					slitDoldur(pNo,sltNo,1,SOLGOZRESMI);
 					projektorSlitNolari[pNo]=sltNo;
 					break;
@@ -484,7 +485,19 @@ long int location = 0;
 		}
 	}
 }
-
+//tek bir bufferi temizler
+void bufferTemizle(unsigned char bufferNo)
+{
+int row,col;
+long int location = 0;
+	for (row = 0; row != 480; row++) {		//480
+		for (col = 0; col != 848; col++) {		//848
+			location = (col+dikeyOfsetler[bufferNo])*2+(row*1696);					//her bir pixel 2 byte olduðu için col*2 yaptým.
+			*((uint16_t*)(fbp[bufferNo] + location)) = 0;//((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
+			
+		}
+	}
+}
 void dataOku(int *dtPointer, unsigned char *dosyaAdi)
 {
 FILE *dosya;
