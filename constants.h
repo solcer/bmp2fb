@@ -2,7 +2,7 @@
 #define TRANSPARENT_COLOR 0xffffffff
 #define EKRANADEDI 17
 #define PIXELADIMI	8
-#define IKIGOZMESAFESI	25
+//#define IKIGOZMESAFESI	25
 
 #define SOLGOZRESMI	0
 #define SAGGOZRESMI 1

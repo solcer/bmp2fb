@@ -59,6 +59,8 @@ void sendProjektorSlitNolariToPc(void);
 
 unsigned char SLITSIZE =	13;
 
+unsigned char IKIGOZMESAFESI = 25;
+
 signed int dikeyOfsetler[EKRANADEDI];//={0,18,50,48,36,32,45,44,55,54,44,20,59,47,51,30,53};			//3. ayar
 //pixelData.dat :48,36,37,33,29,30,22,16,22,25,1,3,13,16,6,0,7,
 //300,290,286,287,283,286,272,271,278,281,255,259,273,274,255,254,256,
@@ -201,6 +203,26 @@ int main(int argc, char *argv[])
 			// printf("\n");
 			
 			switch(buffer[2]){
+				case COMMANDMANUALCONTROL:
+					headPosX=(buffer[4]<<8)&0xff00 | buffer[3];
+					if(headPosX>390) headPosX=390;
+					IKIGOZMESAFESI=(buffer[6]<<8)&0xff00 | buffer[5];
+					SLITSIZE=(buffer[8]<<8)&0xff00 | buffer[7];
+					printf("Head Pos: %d   onceki Slit Pos:%d , yeni sltNo:%d   \r",headPosX,oncekiSltNo[0], projektorSlitNolari[0]+headPosX);
+					for(i=0;i<EKRANADEDI;i++){
+						slitDoldur(i,oncekiSltNo[i],0,SOLGOZRESMI);	//1. resimi sil
+						slitDoldur(i,oncekiSltNo[i]+IKIGOZMESAFESI,0,SAGGOZRESMI);	//2. resimi sil
+						//slit distance ayarlanirken etraftaki eskli slit kalintilarýný sliyorum.
+						//slitDoldur(i,oncekiSltNo[i]-1,0,SOLGOZRESMI);					
+						//slitDoldur(i,oncekiSltNo[i]+IKIGOZMESAFESI-1,0,SAGGOZRESMI);	//2. resimi sil
+						//slitDoldur(i,oncekiSltNo[i]+1,0,SOLGOZRESMI);	//1. resimi sil
+						//slitDoldur(i,oncekiSltNo[i]+IKIGOZMESAFESI+1,0,SAGGOZRESMI);	//2. resimi sil
+						
+						oncekiSltNo[i]=projektorSlitNolari[i]+headPosX;
+						slitDoldur(i,oncekiSltNo[i],1,SOLGOZRESMI);
+						slitDoldur(i,oncekiSltNo[i]+IKIGOZMESAFESI,1,SAGGOZRESMI);		//2.slitler
+					}
+					break;
 				case COMMANDPOSITION:							//pc'den kafa posizyonlarýný alýr
 					//printf("COMMANDPOSITION\n");
 					headPosX=(buffer[4]<<8)&0xff00 | buffer[3];
@@ -230,13 +252,13 @@ int main(int argc, char *argv[])
 						case 1:
 							//yukarý kaydir komutu geldiyse 
 							//gelen ofset degeri kadar offseti kaydir
-							printf("yukari:%d");
-							dikeyOfsetler[buffer[3]]+=buffer[5];
+							//printf("yukari:%d");
+							dikeyOfsetler[buffer[3]]=((buffer[6]<<8) + buffer[5]);
 							break;
 						case 2:
 							//asagi komutu
-							printf("asagi");
-							dikeyOfsetler[buffer[3]]-=buffer[5];
+							//printf("asagi");
+							dikeyOfsetler[buffer[3]]=((buffer[6]<<8) + buffer[5]);
 							break;
 						default:
 							break;
@@ -254,7 +276,8 @@ int main(int argc, char *argv[])
 					SLITSIZE=buffer[3];
 					break;
 				case COMMANDSLITDISTANCE:
-					printf("COMMANDSLITDISTANCE\n");
+					IKIGOZMESAFESI=buffer[3];
+					printf("COMMANDSLITDISTANCE: %d\n",IKIGOZMESAFESI);
 					break;
 				case COMMANDCLEARSCREEN:
 					frameBufferTemizle();
@@ -266,6 +289,30 @@ int main(int argc, char *argv[])
 					slitDoldur(pNo,sltNo +1,0,SOLGOZRESMI);
 					slitDoldur(pNo,sltNo,1,SOLGOZRESMI);
 					projektorSlitNolari[pNo]=sltNo;
+					break;
+				case COMMANDSLITAYARLASAVE:
+					//int a=5000;							//baslangic degeri
+					sltNo=5000;
+					printf("degerler: ");
+					for(i=0;i<EKRANADEDI-1;i++)			//projektorSlitNolari[] icerisindeki en kucuk degeri bul
+					{
+						//a=projektorSlitNolari[i];
+						if(sltNo>projektorSlitNolari[i]){
+							sltNo=projektorSlitNolari[i];
+							printf("%d,",projektorSlitNolari[i]);
+						}
+					}
+					printf("\n");
+					for(i=0;i<EKRANADEDI;i++)			// projektorSlitNolari[] 'dan en kucuk degeri cýkar
+					{
+						projektorSlitNolari[i]-=sltNo;
+						printf("%d,",projektorSlitNolari[i]);
+					}
+					dataYaz(&projektorSlitNolari[0],"./pixelData.dat");			//hesaplanan degeri dosyaya yaz
+					//dataYaz(&projektorSlitNolari[0],"./pixelData.dat");	
+					break;
+				case COMMANDVERTICALCALIBRATIONSAVE:
+					dataYaz(&dikeyOfsetler[0],"./ofsetler.dat");
 					break;
 				case COMMANDSLITNOLARINIGONDER:			//bu kýsým iptal 
 					sendProjektorSlitNolariToPc();
@@ -566,26 +613,31 @@ long int location = 0,slitBaslangici;
 static unsigned char oncekiSlit=0;
 //size_t z = (row * bmp[i].width + col) * BYTES_PER_PIXEL;
 //size_t z=projektorNo*SLITSIZE*848;			//her projektor icin sabit bir resim icerigi gelecegi icin z her projektor icin sabit olacak
-image = (uint8_t *) bmp[resim].bitmap;	
-slitBaslangici=(projektorNo+10)*SLITSIZE*848 ;
-	if(clear==1){
-		for (row = slit; row < slit + SLITSIZE; row++) {
-			//buraya her bir projektor icin onceden belirlenmis offset degerini bir dosyadan okuyarak offset olarak yazacagim.
-			for (col = 0; col != 700; col++) {		//buradaki deger 848'e kadardý. Üstteki bosluklarý almak icin 700'e kadar yazdiriyorum.					
-				size_t z = (slitBaslangici +  ((row-slit) * bmp[resim].width)+  col) * BYTES_PER_PIXEL;
-				//location = (col+dikeyOfsetler[i])*2+(row*finfo[i].line_length);			//her bir pixel 2 byte olduðu için col*2 yaptým.
-				location = (col+dikeyOfsetler[i])*2+(row*1696);								//fb5'in line length degisik olduðu icin 1696 sabit girdim 
-				*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
+
+//slitDoldur(i,oncekiSltNo[i],1,SOLGOZRESMI);
+//slitDoldur(i,oncekiSltNo[i]+IKIGOZMESAFESI,1,SAGGOZRESMI);		//2.slitler
+if((slit+SLITSIZE)<=480){
+	image = (uint8_t *) bmp[resim].bitmap;	
+	slitBaslangici=(projektorNo+10)*SLITSIZE*848 ;
+		if(clear==1){
+			for (row = slit; row < slit + SLITSIZE; row++) {
+				//buraya her bir projektor icin onceden belirlenmis offset degerini bir dosyadan okuyarak offset olarak yazacagim.
+				for (col = 0; col != 700; col++) {		//buradaki deger 848'e kadardý. Üstteki bosluklarý almak icin 700'e kadar yazdiriyorum.					
+					size_t z = (slitBaslangici +  ((row-slit) * bmp[resim].width)+  col) * BYTES_PER_PIXEL;
+					//location = (col+dikeyOfsetler[i])*2+(row*finfo[i].line_length);			//her bir pixel 2 byte olduðu için col*2 yaptým.
+					location = (col+dikeyOfsetler[i])*2+(row*1696);								//fb5'in line length degisik olduðu icin 1696 sabit girdim 
+					*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);				
+				}
 			}
+		}else{
+			for (row = slit; row < slit + SLITSIZE; row++) {
+				//buraya her bir projektor icin onceden belirlenmis offset degerini bir dosyadan okuyarak offset olarak yazacagim.
+				for (col = 0; col != 700; col++) {
+					location = (col+dikeyOfsetler[i])*2+(row*1696);			//her bir pixel 2 byte olduðu için col*2 yaptým.
+					*((uint16_t*)(fbp[i] + location)) = 0;//((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
+				}
+			}	
 		}
-	}else{
-		for (row = slit; row < slit + SLITSIZE; row++) {
-			//buraya her bir projektor icin onceden belirlenmis offset degerini bir dosyadan okuyarak offset olarak yazacagim.
-			for (col = 0; col != 700; col++) {
-				location = (col+dikeyOfsetler[i])*2+(row*1696);			//her bir pixel 2 byte olduðu için col*2 yaptým.
-				*((uint16_t*)(fbp[i] + location)) = 0;//((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
-			}
-		}	
 	}
 }
 
