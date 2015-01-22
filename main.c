@@ -1,6 +1,6 @@
 
 
-//selim Ölçer 14/10/2014 bmp to framebuffer
+//selim ?l?er 14/10/2014 bmp to framebuffer
 //27.11.2014 staticGoruntu.c
 //23.12.2014 main.c
 
@@ -39,11 +39,11 @@ size_t bitmap_get_bpp(void *bitmap);
 void bitmap_destroy(void *bitmap);
 void cleanUp(void);
 
-void frameBufferTemizle(void);						//tum framebufferlarý temizler
-void framebufferAyarla(unsigned char );				//çözünürlüðü bozuk framebufferi tespit edip 848x480 yapar
-void tumFrameBufferlariYenile(char pNo);			//Dikey kalibrasyon ekranýnda tüm framebufferlara bmp[2]'yi yükler.
-void tekFrameBufferiYenile(char pNo);				//Dikey kalibrasyon ekranýnda secilen framebuffer'a farklý resim yükler.
-void slitDoldur(uint8_t projektorNo,uint16_t slit,uint8_t clear,uint8_t resim);		//istenilen pixele slit oluþturur
+void frameBufferTemizle(void);						//tum framebufferlar? temizler
+void framebufferAyarla(unsigned char );				//??z?n?rl??? bozuk framebufferi tespit edip 848x480 yapar
+void tumFrameBufferlariYenile(char pNo);			//Dikey kalibrasyon ekran?nda t?m framebufferlara bmp[2]'yi y?kler.
+void tekFrameBufferiYenile(char pNo);				//Dikey kalibrasyon ekran?nda secilen framebuffer'a farkl? resim y?kler.
+void slitDoldur(uint8_t projektorNo,uint16_t slit,uint8_t clear,uint8_t resim);		//istenilen pixele slit olu?turur
 void bufferTemizle(unsigned char bufferNo);
 void ttyleriHazirla(void);
 uint16_t ttyOku(void);
@@ -51,15 +51,15 @@ int getch(void);
 
 void dataYaz(int * ,unsigned char *);
 void dataOku(int * ,unsigned char *);
-uint8_t loadImage (char bufNo,char *imageName);			//bmp registerine istenilen resimi yükler
+uint8_t loadImage (char bufNo,char *imageName);			//bmp registerine istenilen resimi y?kler
 
 void sendOfsetDataToPc(void);
 void sendProjektorSlitNolariToPc(void);
 
 
-unsigned char SLITSIZE =	13;
+unsigned char SLITSIZE =	13,kaydirma=0,resimNumarasi=0;
 
-unsigned char IKIGOZMESAFESI = 25;
+unsigned char IKIGOZMESAFESI = 29;
 
 signed int dikeyOfsetler[EKRANADEDI];//={0,18,50,48,36,32,45,44,55,54,44,20,59,47,51,30,53};			//3. ayar
 //pixelData.dat :48,36,37,33,29,30,22,16,22,25,1,3,13,16,6,0,7,
@@ -75,7 +75,8 @@ bmp_bitmap_callback_vt bitmap_callbacks = {
 	bitmap_get_bpp
 };
 bmp_result code;
-bmp_image bmp[EKRANADEDI];
+
+bmp_image bmp[RESIMSAYISI+2];			//resim sayýsý + iki tane kalibrasyon resimleri
 
 
 int calismaModu;
@@ -86,7 +87,7 @@ struct fb_var_screeninfo vinfo[EKRANADEDI];
 
 struct fb_fix_screeninfo finfo[EKRANADEDI];
 
-struct fb_con2fbmap c2m[EKRANADEDI];			//tty leri framebuffer a atamak için kullanýlýyor
+struct fb_con2fbmap c2m[EKRANADEDI];			//tty leri framebuffer a atamak i?in kullan?l?yor
 
 long int screensize[EKRANADEDI] ;
 
@@ -94,7 +95,7 @@ char *fbp[EKRANADEDI] ;
 
 uint8_t *image;
 
-unsigned char *data[EKRANADEDI];				//resim datasýný içeren deðiþken
+unsigned char *data[EKRANADEDI];				//resim datas?n? i?eren de?i?ken
 unsigned int projektorSlitNolari[EKRANADEDI];  //=296,284,285,281,277,278,270,264,270,273,249,251,261,264,254,248,255,
 
 
@@ -163,7 +164,7 @@ int main(int argc, char *argv[])
 		printf("Can not open comport\n");
 		return(0);
 	}
-	for(i=0;i<EKRANADEDI;i++)			//pointerlarýn baþlangýç degeri
+	for(i=0;i<EKRANADEDI;i++)			//pointerlar?n ba?lang?? degeri
 	{
 	  fbp[i]=0;
 	  fbfd[i]=0;
@@ -181,17 +182,23 @@ int main(int argc, char *argv[])
 
 	ttyleriHazirla();
 	frameBufferTemizle();
-	loadImage(0,"/home/pi/selim/bmp2fb/AllContent/bmps/image0.bmp");
-	loadImage(1,"/home/pi/selim/bmp2fb/AllContent/bmps/image1.bmp");
-	loadImage(2,"/home/pi/selim/bmp2fb/calibrationPictureRed.bmp");
-	loadImage(3,"/home/pi/selim/bmp2fb/calibrationPictureGreen.bmp");
+	for(i=0;i<RESIMSAYISI;i++){			//tum resimleri ram'a yukle
+		sprintf(&buffer[0],"/home/pi/selim/bmp2fb/AllContent/bmps/image%d.bmp",i);
+		loadImage(i,buffer);
+	}
 	
+	
+	loadImage(RESIMSAYISI+1,"/home/pi/selim/bmp2fb/calibrationPictureRed.bmp");
+	loadImage(RESIMSAYISI+2,"/home/pi/selim/bmp2fb/calibrationPictureGreen.bmp");
+	for(i=0;i<RESIMSAYISI+2;i++){		
+		printf("bmp[%d]: %d\n",i,bmp[i].buffer_size);
+	}
 	
 //	for(i=0;i<EKRANADEDI;i++){
 //		slitDoldur(i,projektorSlitNolari[i],1,SOLGOZRESMI);
 //		slitDoldur(i,projektorSlitNolari[i]+IKIGOZMESAFESI,1,SAGGOZRESMI);
 //	}
-	RS232_flush(cport_nr);			//portta bekleyen datalarý temizle
+	RS232_flush(cport_nr);			//portta bekleyen datalar? temizle
 	while(1){
 		RS232_PollComport(cport_nr,&buffer[0],15);
 		if(buffer[0] =='U' && buffer[1]=='U')
@@ -212,7 +219,7 @@ int main(int argc, char *argv[])
 					for(i=0;i<EKRANADEDI;i++){
 						slitDoldur(i,oncekiSltNo[i],0,SOLGOZRESMI);	//1. resimi sil
 						slitDoldur(i,oncekiSltNo[i]+IKIGOZMESAFESI,0,SAGGOZRESMI);	//2. resimi sil
-						//slit distance ayarlanirken etraftaki eskli slit kalintilarýný sliyorum.
+						//slit distance ayarlanirken etraftaki eskli slit kalintilar?n? sliyorum.
 						//slitDoldur(i,oncekiSltNo[i]-1,0,SOLGOZRESMI);					
 						//slitDoldur(i,oncekiSltNo[i]+IKIGOZMESAFESI-1,0,SAGGOZRESMI);	//2. resimi sil
 						//slitDoldur(i,oncekiSltNo[i]+1,0,SOLGOZRESMI);	//1. resimi sil
@@ -223,15 +230,18 @@ int main(int argc, char *argv[])
 						slitDoldur(i,oncekiSltNo[i]+IKIGOZMESAFESI,1,SAGGOZRESMI);		//2.slitler
 					}
 					break;
-				case COMMANDPOSITION:							//pc'den kafa posizyonlarýný alýr
+				case COMMANDPOSITION:							//pc'den kafa posizyonlar?n? al?r
 					//printf("COMMANDPOSITION\n");
 					headPosX=(buffer[4]<<8)&0xff00 | buffer[3];
 					if(headPosX>390) headPosX=390;
 					//if(headPosX<90) headPosX=90;
 					
-					headPosY=(buffer[7]<<8)&0xff00 | buffer[8];
-					headPosZ=(buffer[12]<<8)&0xff00 | buffer[11];
-					printf("Head Pos: %d   onceki Slit Pos:%d , yeni sltNo:%d   \r",headPosX,oncekiSltNo[0], projektorSlitNolari[0]+headPosX);
+					headPosY=(buffer[8]<<8)&0xff00 | buffer[7];
+					//headPosZ=(buffer[12]<<8)&0xff00 | buffer[11];
+					kaydirma=headPosX/20;//(buffer[12]<<8)&0xff00 | buffer[11];
+					if(kaydirma>=20) kaydirma=20;
+					resimNumarasi=headPosY;
+					printf("Head Pos: %d   onceki Slit Pos:%d , yeni sltNo:%d  ,resimNumarasi:%d \r",headPosX,oncekiSltNo[0], projektorSlitNolari[0]+headPosX,resimNumarasi);
 					//frameBufferTemizle();
 					for(i=0;i<EKRANADEDI;i++){
 						slitDoldur(i,oncekiSltNo[i],0,SOLGOZRESMI);	//1. resimi sil
@@ -246,8 +256,8 @@ int main(int argc, char *argv[])
 						/*******************************************/
 						
 						oncekiSltNo[i]=projektorSlitNolari[i]+headPosX;
-						slitDoldur(i,oncekiSltNo[i],1,SOLGOZRESMI);
-						slitDoldur(i,oncekiSltNo[i]+IKIGOZMESAFESI,1,SAGGOZRESMI);		//2.slitler
+						slitDoldur(i,oncekiSltNo[i],1,resimNumarasi);
+						slitDoldur(i,oncekiSltNo[i]+IKIGOZMESAFESI,1,resimNumarasi+1);		//2.slitler
 						
 						/*******************************************
 						//sol ve sag tarafa eklenen slitler
@@ -259,10 +269,10 @@ int main(int argc, char *argv[])
 						
 					}
 					break;
-				case COMMANDVERTICALCALIBRATIONSETPROJECTOR:			//projektörlerin yeni ofset degerini al
-					switch(buffer[4]){			//yukarý veya asagi komutu geldi mi kontrol et
+				case COMMANDVERTICALCALIBRATIONSETPROJECTOR:			//projekt?rlerin yeni ofset degerini al
+					switch(buffer[4]){			//yukar? veya asagi komutu geldi mi kontrol et
 						case 1:
-							//yukarý kaydir komutu geldiyse 
+							//yukar? kaydir komutu geldiyse 
 							//gelen ofset degeri kadar offseti kaydir
 							//printf("yukari:%d");
 							dikeyOfsetler[buffer[3]]=((buffer[6]<<8) + buffer[5]);
@@ -316,7 +326,7 @@ int main(int argc, char *argv[])
 						}
 					}
 					printf("\n");
-					for(i=0;i<EKRANADEDI;i++)			// projektorSlitNolari[] 'dan en kucuk degeri cýkar
+					for(i=0;i<EKRANADEDI;i++)			// projektorSlitNolari[] 'dan en kucuk degeri c?kar
 					{
 						projektorSlitNolari[i]-=sltNo;
 						printf("%d,",projektorSlitNolari[i]);
@@ -327,11 +337,11 @@ int main(int argc, char *argv[])
 				case COMMANDVERTICALCALIBRATIONSAVE:
 					dataYaz(&dikeyOfsetler[0],"./ofsetler.dat");
 					break;
-				case COMMANDSLITNOLARINIGONDER:			//bu kýsým iptal 
+				case COMMANDSLITNOLARINIGONDER:			//bu k?s?m iptal 
 					sendProjektorSlitNolariToPc();
 					break;
 			}
-			RS232_flush(cport_nr);			//portta bekleyen datalarý temizle
+			RS232_flush(cport_nr);			//portta bekleyen datalar? temizle
 			for(i=0;i<15;i++)
 				buffer[i]=0;				//buffer i temizle
 		}
@@ -490,7 +500,7 @@ long int location = 0;
 	for(i=0;i<EKRANADEDI;i++){ 				//resimleri ekranlara basan kisim
 		for (row = 0; row != 480; row++) {		//480
 			for (col = 0; col != 848; col++) {		//848
-				location = (col+dikeyOfsetler[i])*2+(row*1696);					//her bir pixel 2 byte olduðu için col*2 yaptým.
+				location = (col+dikeyOfsetler[i])*2+(row*1696);					//her bir pixel 2 byte oldu?u i?in col*2 yapt?m.
 				*((uint16_t*)(fbp[i] + location)) = 0;//((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
 				
 			}
@@ -504,7 +514,7 @@ int row,col;
 long int location = 0;
 	for (row = 0; row != 480; row++) {		//480
 		for (col = 0; col != 848; col++) {		//848
-			location = (col+dikeyOfsetler[bufferNo])*2+(row*1696);					//her bir pixel 2 byte olduðu için col*2 yaptým.
+			location = (col+dikeyOfsetler[bufferNo])*2+(row*1696);					//her bir pixel 2 byte oldu?u i?in col*2 yapt?m.
 			*((uint16_t*)(fbp[bufferNo] + location)) = 0;//((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
 			
 		}
@@ -549,15 +559,15 @@ void ttyleriHazirla(void)
 int i;
 uint8_t buffer[100];
 unsigned short res = 0;
-	for(i=0;i<EKRANADEDI;i++)				//ekranlarý tty lere atayýp ram'de pointer a iþaretliyor
+	for(i=0;i<EKRANADEDI;i++)				//ekranlar? tty lere atay?p ram'de pointer a i?aretliyor
 	{
 		//printf("i:%d\n",i);		
 
-		c2m[i].console = (uint32_t) 10+i;			//framebuffer a atanacak consol numarasý
-		c2m[i].framebuffer = (uint32_t) i;		//framebuffer numarasý
+		c2m[i].console = (uint32_t) 10+i;			//framebuffer a atanacak consol numaras?
+		c2m[i].framebuffer = (uint32_t) i;		//framebuffer numaras?
 
 		sprintf(&buffer[0],"/dev/fb%d",i); 
-		fbfd[i] = open(buffer, O_RDWR);	//framebuffer ý açýyoru		
+		fbfd[i] = open(buffer, O_RDWR);	//framebuffer ? a??yoru		
 		if (fbfd[i] == -1) 			//hata geldi mi?
 		{
 			printf("acilamayan device no:%d",i);
@@ -566,7 +576,7 @@ unsigned short res = 0;
 		}
 		//printf("The framebuffer %d  was opened successfully.\n",i);
 
-		if (ioctl(fbfd[i], FBIOPUT_CON2FBMAP, &c2m[i])) 			//framebufferý tty lere assign et
+		if (ioctl(fbfd[i], FBIOPUT_CON2FBMAP, &c2m[i])) 			//framebuffer? tty lere assign et
 		{
 			//fprintf(stderr, "%s: Cannot set console mapping\n", progname);
 			perror("Error: cannot assign framebuffer to tty device : " );
@@ -589,7 +599,7 @@ unsigned short res = 0;
 			exit(2);
 
 		}
-tekrarOlc:			//ekran çözünürlüðü tutmuyorsa ayarlayýp tekrar buraya gelecek
+tekrarOlc:			//ekran ??z?n?rl??? tutmuyorsa ayarlay?p tekrar buraya gelecek
 		// Get variable screen information
 		if (ioctl(fbfd[i], FBIOGET_VSCREENINFO, &vinfo[i]) == -1) {
 
@@ -641,17 +651,17 @@ static unsigned char oncekiSlit=0;
 //slitDoldur(i,oncekiSltNo[i]+IKIGOZMESAFESI,1,SAGGOZRESMI);		//2.slitler
 if((slit+SLITSIZE)<=480){
 	image = (uint8_t *) bmp[resim].bitmap;	
-	slitBaslangici=(projektorNo)*SLITSIZE*848 ;
+	slitBaslangici=(projektorNo+kaydirma)*SLITSIZE*848 ;
 	//slitBaslangici=(projektorNo+(slit/20))*SLITSIZE*848 ;
 		if(clear==1){
 			for (row = slit; row < slit + SLITSIZE; row++) {
-				//alttaki döngüyü hizlandirmak icin temp1 ve temp2 icerigini buraya aldim.
+				//alttaki d?ng?y? hizlandirmak icin temp1 ve temp2 icerigini buraya aldim.
 				temp1=(row*1696);									
 				temp2=slitBaslangici +  ((row-slit) * bmp[resim].width);
-				for (col = 0; col != 700; col++) {		//buradaki deger 848'e kadardý. Üstteki bosluklarý almak icin 700'e kadar yazdiriyorum.					
+				for (col = 0; col != 700; col++) {		//buradaki deger 848'e kadard?. ?stteki bosluklar? almak icin 700'e kadar yazdiriyorum.					
 					size_t z = (temp2 +  col) * BYTES_PER_PIXEL;
-					//her bir pixel 2 byte olduðu için (col+dikeyOfsetler[i])*2 yaptým.
-					location = (col+dikeyOfsetler[i])*2+temp1;								//fb5'in line length degisik olduðu icin 1696 sabit girdim 
+					//her bir pixel 2 byte oldu?u i?in (col+dikeyOfsetler[i])*2 yapt?m.
+					location = (col+dikeyOfsetler[i])*2+temp1;								//fb5'in line length degisik oldu?u icin 1696 sabit girdim 
 					*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);				
 				}
 			}
@@ -659,7 +669,7 @@ if((slit+SLITSIZE)<=480){
 			for (row = slit; row < slit + SLITSIZE; row++) {
 				temp1=(row*1696);
 				for (col = 0; col != 700; col++) {
-					location = (col+dikeyOfsetler[i])*2+temp1;			//her bir pixel 2 byte olduðu için col*2 yaptým.
+					location = (col+dikeyOfsetler[i])*2+temp1;			//her bir pixel 2 byte oldu?u i?in col*2 yapt?m.
 					*((uint16_t*)(fbp[i] + location)) = 0;//((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
 				}
 			}	
@@ -697,7 +707,7 @@ uint16_t dt;
 }
 
 
-//bu fonksiyonu 800x600 çözünürlük hatasýný (özellikle fb5'in)düzeltmek için yaptým.
+//bu fonksiyonu 800x600 ??z?n?rl?k hatas?n? (?zellikle fb5'in)d?zeltmek i?in yapt?m.
 void framebufferAyarla(unsigned char fbNo)
 {
 	int xres=848;
@@ -792,9 +802,9 @@ long int location = 0;
 	for(i=0;i<EKRANADEDI;i++){ 				//resimleri ekranlara basan kisim
 		for (row = 0; row != 480; row++) {		//480
 			for (col = 0; col != 848; col++) {		//848
-				image = (uint8_t *) bmp[2].bitmap;
-				size_t z = (row * bmp[2].width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel baþlangýcý hesaplanýyor.
-				location = (col+dikeyOfsetler[i])*2+(row*1696);					//her bir pixel 2 byte olduðu için col*2 yaptým.
+				image = (uint8_t *) bmp[RESIMSAYISI+1].bitmap;
+				size_t z = (row * bmp[RESIMSAYISI+1].width + col) * BYTES_PER_PIXEL;		//bmp i?erisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel ba?lang?c? hesaplan?yor.
+				location = (col+dikeyOfsetler[i])*2+(row*1696);					//her bir pixel 2 byte oldu?u i?in col*2 yapt?m.
 				*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
 			}
 		}	
@@ -810,22 +820,22 @@ int i,row,col;
 long int location = 0;
 
 static oncekiPNo;
-	//bir önceki secimi siliyoruz
+	//bir ?nceki secimi siliyoruz
 	i=oncekiPNo;
 	for (row = 0; row != 480; row++) {		//480
 		for (col = 0; col != 848; col++) {		//848
-			image = (uint8_t *) bmp[2].bitmap;
-			size_t z = (row * bmp[2].width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel baþlangýcý hesaplanýyor.
-			location = (col+dikeyOfsetler[i])*2+(row*1696);					//her bir pixel 2 byte olduðu için col*2 yaptým.
+			image = (uint8_t *) bmp[RESIMSAYISI+1].bitmap;
+			size_t z = (row * bmp[RESIMSAYISI+1].width + col) * BYTES_PER_PIXEL;		//bmp i?erisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel ba?lang?c? hesaplan?yor.
+			location = (col+dikeyOfsetler[i])*2+(row*1696);					//her bir pixel 2 byte oldu?u i?in col*2 yapt?m.
 			*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
 		}
 	}	
 	i=pNo;
 	for (row = 0; row != 480; row++) {		//480
 		for (col = 0; col != 848; col++) {		//848
-			image = (uint8_t *) bmp[3].bitmap;
-			size_t z = (row * bmp[3].width + col) * BYTES_PER_PIXEL;		//bmp içerisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel baþlangýcý hesaplanýyor.
-			location = (col+dikeyOfsetler[i])*2+(row*1696);					//her bir pixel 2 byte olduðu için col*2 yaptým.
+			image = (uint8_t *) bmp[RESIMSAYISI+2].bitmap;
+			size_t z = (row * bmp[RESIMSAYISI+2].width + col) * BYTES_PER_PIXEL;		//bmp i?erisinde bpp ne olursa olsun her bir pixel bilgisi 4 byte uzunlugundadir. burada pixel ba?lang?c? hesaplan?yor.
+			location = (col+dikeyOfsetler[i])*2+(row*1696);					//her bir pixel 2 byte oldu?u i?in col*2 yapt?m.
 			*((uint16_t*)(fbp[i] + location)) = ((uint16_t)(image[z] << 8) &  0xf800) | ((uint16_t)(image[z+1] << 3) & 0x7E0) |(uint16_t)((image[z+2]>>3) & 0x1f);
 		}
 	}	
@@ -855,4 +865,3 @@ void sendOfsetDataToPc(void)
 		RS232_SendByte(cport_nr,(unsigned char)((dikeyOfsetler[i]&0xff00)>>8));
 	}
 }
-
