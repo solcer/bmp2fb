@@ -1,7 +1,7 @@
 #define BYTES_PER_PIXEL 4
 #define TRANSPARENT_COLOR 0xffffffff
 #define EKRANADEDI 17
-#define RESIMSAYISI 36				//ekranda dondurulecek resim sayýsý
+#define RESIMSAYISI 72				//ekranda dondurulecek resim sayýsý
 #define PIXELADIMI	8
 //#define IKIGOZMESAFESI	25
 
