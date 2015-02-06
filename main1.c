@@ -148,6 +148,8 @@ int main(int argc, char *argv[])
 	uint8_t pNo;
 	uint16_t sltNo;
 	uint16_t oncekiSltNo[EKRANADEDI];
+	uint8_t kullaniciNo;
+	
 	
 	dataOku(&projektorSlitNolari[0],"./pixelData.dat");	
 	dataOku(&dikeyOfsetler[0],"./ofsetler.dat");
@@ -230,8 +232,8 @@ int main(int argc, char *argv[])
   					headPosX=(buffer[4]<<8)&0xff00 | buffer[3];
 					if(headPosX>390) headPosX=390;
 					//if(headPosX<90) headPosX=90;
-					
-					headPosY=(buffer[8]<<8)&0xff00 | buffer[7];
+					kullaniciNo=buffer[6];					//pcden gelen kullanici numarasi
+					headPosY=(buffer[6]<<8)&0xff00 | buffer[5];
 					//headPosZ=(buffer[12]<<8)&0xff00 | buffer[11];
 					kaydirma=headPosX/20;//(buffer[12]<<8)&0xff00 | buffer[11];
 					if(kaydirma>=20) kaydirma=20;
