@@ -57,7 +57,7 @@ void sendOfsetDataToPc(void);
 void sendProjektorSlitNolariToPc(void);
 
 
-unsigned char SLITSIZE =	13,kaydirma=0,resimNumarasi=0;
+unsigned char SLITSIZE =	13,firstPersonKaydirma=0,secondPersonKaydirma=0,firstPersonImageNumber=0,secondPersonImageNumber=0;
 
 unsigned char IKIGOZMESAFESI = 29;
 
@@ -141,13 +141,13 @@ int main(int argc, char *argv[])
 
 	//unsigned char uartBuf[4096];
 	char mode[]={'8','N','1',0};
-	uint16_t headPosX;
-	uint16_t headPosY;
-	uint16_t headPosZ;
+	uint16_t firstPersonHeadPositionX,secondPersonHeadPositionX;
+	uint16_t firstPersonHeadPosY,secondPersonHeadPosY;
+	uint16_t firstPersonHeadPosZ;
 	
 	uint8_t pNo;
 	uint16_t sltNo;
-	uint16_t oncekiSltNo[EKRANADEDI];
+	uint16_t oncekiSltNo[2][EKRANADEDI];			//iki kullanýcý icin degiskeni iki boyutlu yaptým.
 	uint8_t kullaniciNo;
 	
 	
@@ -172,7 +172,8 @@ int main(int argc, char *argv[])
 	  fbfd[i]=0;
 	  tty[i]=0;
 	  screensize[i]=0;
-	  oncekiSltNo[i]=0;
+	  oncekiSltNo[0][i]=0;
+	  oncekiSltNo[1][i]=0;
 	}
 	
 	if ((getuid ()) != 0) {
@@ -202,57 +203,93 @@ int main(int argc, char *argv[])
 	RS232_flush(cport_nr);			//portta bekleyen datalar? temizle
 	while(1){
 		RS232_PollComport(cport_nr,&buffer[0],15);
+		
 		if(buffer[0] =='U' && buffer[1]=='U')
 		{
-			 printf("buffer[]= ");
+			printf("buffer[]= ");
 			 for(i=0;i<15;i++){
 				 printf("%d,",buffer[i]);
 			 }
-			 printf("\n");
-			
+			 printf("\n");	
 			switch(buffer[2]){
 				case COMMANDMANUALCONTROL:
 					printf("manual control\r");
-					headPosX=(buffer[4]<<8)&0xff00 | buffer[3];
-					if(headPosX>390) headPosX=390;
+					firstPersonHeadPositionX=(buffer[4]<<8)&0xff00 | buffer[3];
+					if(firstPersonHeadPositionX>390) firstPersonHeadPositionX=390;
 					IKIGOZMESAFESI=(buffer[6]<<8)&0xff00 | buffer[5];
 					SLITSIZE=(buffer[8]<<8)&0xff00 | buffer[7];
-					printf("Head Pos: %d   onceki Slit Pos:%d , yeni sltNo:%d   \r",headPosX,oncekiSltNo[0], projektorSlitNolari[0]+headPosX);
+					printf("Head Pos: %d   onceki Slit Pos:%d , yeni sltNo:%d   \r",firstPersonHeadPositionX,oncekiSltNo[0][0], projektorSlitNolari[0]+firstPersonHeadPositionX);
 					for(i=0;i<EKRANADEDI;i++){
-						slitDoldur(i,oncekiSltNo[i],0,SOLGOZRESMI);	//1. resimi sil
-						slitDoldur(i,oncekiSltNo[i]+IKIGOZMESAFESI,0,SAGGOZRESMI);	//2. resimi sil
+						slitDoldur(i,oncekiSltNo[0][i],0,SOLGOZRESMI);	//1. resimi sil
+						slitDoldur(i,oncekiSltNo[0][i]+IKIGOZMESAFESI,0,SAGGOZRESMI);	//2. resimi sil
 						
-						oncekiSltNo[i]=projektorSlitNolari[i]+headPosX;
-						slitDoldur(i,oncekiSltNo[i],1,SOLGOZRESMI);
-						slitDoldur(i,oncekiSltNo[i]+IKIGOZMESAFESI,1,SAGGOZRESMI);		//2.slitler
+						oncekiSltNo[0][i]=projektorSlitNolari[i]+firstPersonHeadPositionX;
+						slitDoldur(i,oncekiSltNo[0][i],1,SOLGOZRESMI);
+						slitDoldur(i,oncekiSltNo[0][i]+IKIGOZMESAFESI,1,SAGGOZRESMI);		//2.slitler
 					}
+					break;
+				case COMMANDMULTIUSERPOSITION:							//coklu kullanici bilgisi
+					//printf("COMMANDPOSITION\n");
+  					firstPersonHeadPositionX=(buffer[4]<<8)&0xff00 | buffer[3];
+					if(firstPersonHeadPositionX>390) firstPersonHeadPositionX=390;
+					kullaniciNo=0;					//pcden gelen kullanici numarasi
+					firstPersonImageNumber=(buffer[6]<<8)&0xff00 | buffer[5];			//elle cevrilen görüntü numarasý
+					firstPersonKaydirma=firstPersonHeadPositionX/20;					//yataydaki görüntü kaydirma
+					if(firstPersonKaydirma>=20) firstPersonKaydirma=20;
+					printf("Head Pos: %d   onceki Slit Pos:%d , yeni sltNo:%d  ,firstPersonImageNumber:%d \n",firstPersonHeadPositionX,oncekiSltNo[kullaniciNo][0], projektorSlitNolari[0]+firstPersonHeadPositionX,firstPersonImageNumber);
+					if(firstPersonImageNumber==0) firstPersonImageNumber= RESIMSAYISI-2;
+					
+					
+					
+					secondPersonHeadPositionX=(buffer[8]<<8)&0xff00 | buffer[7];
+					
+					if(secondPersonHeadPositionX>390) secondPersonHeadPositionX=390;
+					
+					secondPersonImageNumber=(buffer[10]<<8)&0xff00 | buffer[9];
+					secondPersonKaydirma=secondPersonHeadPositionX/20;
+					if(secondPersonKaydirma>=20) secondPersonKaydirma=20;
+					secondPersonImageNumber=1;
+					printf("Head Pos: %d   onceki Slit Pos:%d , yeni sltNo:%d  ,secondPersonImageNumber:%d \n",secondPersonHeadPositionX,oncekiSltNo[kullaniciNo][0], projektorSlitNolari[0]+secondPersonHeadPositionX,secondPersonImageNumber);
+					if(secondPersonImageNumber==0) secondPersonImageNumber= RESIMSAYISI-2;
+					
+					
+					
+					
+					for(i=0;i<EKRANADEDI;i++){
+						slitDoldur(i,oncekiSltNo[0][i],0,firstPersonImageNumber);	//1. resimi sil
+						slitDoldur(i,oncekiSltNo[0][i]+IKIGOZMESAFESI,0,firstPersonImageNumber+1);	//2. resimi sil
+						
+						oncekiSltNo[0][i]=projektorSlitNolari[i]+firstPersonHeadPositionX;
+						slitDoldur(i,oncekiSltNo[0][i],1,firstPersonImageNumber);
+						slitDoldur(i,oncekiSltNo[0][i]+IKIGOZMESAFESI,1,firstPersonImageNumber+1);		//2.slitler
+						
+						
+						slitDoldur(i,oncekiSltNo[1][i],0,secondPersonImageNumber);	//1. resimi sil
+						slitDoldur(i,oncekiSltNo[1][i]+IKIGOZMESAFESI,0,secondPersonImageNumber+1);	//2. resimi sil
+						
+						oncekiSltNo[1][i]=projektorSlitNolari[i]+secondPersonHeadPositionX;
+						slitDoldur(i,oncekiSltNo[1][i],1,secondPersonImageNumber);
+						slitDoldur(i,oncekiSltNo[1][i]+IKIGOZMESAFESI,1,secondPersonImageNumber+1);		//2.slitler
+						
+					}
+					
 					break;
 				case COMMANDPOSITION:							//pc'den kafa posizyonlar?n? al?r
 					//printf("COMMANDPOSITION\n");
-  					headPosX=(buffer[4]<<8)&0xff00 | buffer[3];
-					if(headPosX>390) headPosX=390;
-					//if(headPosX<90) headPosX=90;
-					kullaniciNo=buffer[6];					//pcden gelen kullanici numarasi
-					headPosY=(buffer[6]<<8)&0xff00 | buffer[5];
-					//headPosZ=(buffer[12]<<8)&0xff00 | buffer[11];
-					kaydirma=headPosX/20;//(buffer[12]<<8)&0xff00 | buffer[11];
-					if(kaydirma>=20) kaydirma=20;
-					resimNumarasi=headPosY;
-					printf("Head Pos: %d   onceki Slit Pos:%d , yeni sltNo:%d  ,resimNumarasi:%d \n",headPosX,oncekiSltNo[0], projektorSlitNolari[0]+headPosX,resimNumarasi);
-					/*for(i=0;i<EKRANADEDI;i++){
-						oncekiSltNo[i]=projektorSlitNolari[i]+headPosX;
-						//ilk once iki göz uzerine dusecek resimi isle
-						slitDoldur(i,oncekiSltNo[i],1,resimNumarasi);
-						slitDoldur(i,oncekiSltNo[i]+IKIGOZMESAFESI,1,resimNumarasi+1);		//2.slitler
-						
-						slitDoldur(i,oncekiSltNo[i]-SLITSIZE,1,resimNumarasi);
-						slitDoldur(i,oncekiSltNo[i]+IKIGOZMESAFESI+SLITSIZE,1,resimNumarasi);
-						
-					}*/
-					if(resimNumarasi==0) resimNumarasi= RESIMSAYISI-2;
+  					firstPersonHeadPositionX=(buffer[4]<<8)&0xff00 | buffer[3];
+					if(firstPersonHeadPositionX>390) firstPersonHeadPositionX=390;
+					kullaniciNo=buffer[7];					//pcden gelen kullanici numarasi
+					firstPersonHeadPosY=(buffer[6]<<8)&0xff00 | buffer[5];
+					firstPersonKaydirma=firstPersonHeadPositionX/20;						//görüntüyü kaydýrma  
+					if(firstPersonKaydirma>=20) firstPersonKaydirma=20;
+					firstPersonImageNumber=firstPersonHeadPosY;
+					printf("Head Pos: %d   onceki Slit Pos:%d , yeni sltNo:%d  ,firstPersonImageNumber:%d \n",firstPersonHeadPositionX,oncekiSltNo[kullaniciNo][0], projektorSlitNolari[0]+firstPersonHeadPositionX,firstPersonImageNumber);
+					
+					if(firstPersonImageNumber==0) firstPersonImageNumber= RESIMSAYISI-2;
+					
 					for(i=0;i<EKRANADEDI;i++){
-						slitDoldur(i,oncekiSltNo[i],0,resimNumarasi);	//1. resimi sil
-						slitDoldur(i,oncekiSltNo[i]+IKIGOZMESAFESI,0,resimNumarasi+1);	//2. resimi sil
+						slitDoldur(i,oncekiSltNo[kullaniciNo][i],0,firstPersonImageNumber);	//1. resimi sil
+						slitDoldur(i,oncekiSltNo[kullaniciNo][i]+IKIGOZMESAFESI,0,firstPersonImageNumber+1);	//2. resimi sil
 						
 						/*******************************************
 						//sol ve sag tarafan silinen slitler
@@ -262,16 +299,16 @@ int main(int argc, char *argv[])
 						slitDoldur(i,oncekiSltNo[i]+IKIGOZMESAFESI+SLITSIZE,0,SAGGOZRESMI);	//2. resimi sil
 						/*******************************************/
 						
-						oncekiSltNo[i]=projektorSlitNolari[i]+headPosX;
-						slitDoldur(i,oncekiSltNo[i],1,resimNumarasi);
-						slitDoldur(i,oncekiSltNo[i]+IKIGOZMESAFESI,1,resimNumarasi+1);		//2.slitler
+						oncekiSltNo[kullaniciNo][i]=projektorSlitNolari[i]+firstPersonHeadPositionX;
+						slitDoldur(i,oncekiSltNo[kullaniciNo][i],1,firstPersonImageNumber);
+						slitDoldur(i,oncekiSltNo[kullaniciNo][i]+IKIGOZMESAFESI,1,firstPersonImageNumber+1);		//2.slitler
 						
 						/*******************************************
 						//sol ve sag tarafa eklenen slitler
-						slitDoldur(i,oncekiSltNo[i]-SLITSIZE,1,resimNumarasi);
-						slitDoldur(i,oncekiSltNo[i]+IKIGOZMESAFESI-SLITSIZE,1,resimNumarasi+1);		//2.slitler
-						slitDoldur(i,oncekiSltNo[i]+SLITSIZE,1,resimNumarasi);
-						slitDoldur(i,oncekiSltNo[i]+IKIGOZMESAFESI+SLITSIZE,1,resimNumarasi+1);		//2.slitler
+						slitDoldur(i,oncekiSltNo[i]-SLITSIZE,1,firstPersonImageNumber);
+						slitDoldur(i,oncekiSltNo[i]+IKIGOZMESAFESI-SLITSIZE,1,firstPersonImageNumber+1);		//2.slitler
+						slitDoldur(i,oncekiSltNo[i]+SLITSIZE,1,firstPersonImageNumber);
+						slitDoldur(i,oncekiSltNo[i]+IKIGOZMESAFESI+SLITSIZE,1,firstPersonImageNumber+1);		//2.slitler
 						/*******************************************/
 						
 					}
@@ -353,11 +390,11 @@ int main(int argc, char *argv[])
 				default:
 					printf("Default geldi.\n");
 				break;
-			}
-			RS232_flush(cport_nr);			//portta bekleyen datalar? temizle
-			for(i=0;i<15;i++)
-				buffer[i]=0;				//buffer i temizle
-		}
+			}//switch(buffer[2]){
+		}//if(buffer[0] =='U' && buffer[1]=='U')
+		RS232_flush(cport_nr);			//portta bekleyen datalar? temizle
+		for(i=0;i<15;i++)
+			buffer[i]=0;				//buffer i temizle
 	}
 	
 cikis:
@@ -664,7 +701,7 @@ static unsigned char oncekiSlit=0;
 //slitDoldur(i,oncekiSltNo[i]+IKIGOZMESAFESI,1,SAGGOZRESMI);		//2.slitler
 if((slit+SLITSIZE)<=480){ 
 	image = (uint8_t *) bmp[resim].bitmap;	
-	slitBaslangici=(projektorNo+kaydirma)*SLITSIZE*848 ;			//bitmapler içerisindeki slitlerin yerini hesaplýyor
+	slitBaslangici=(projektorNo+firstPersonKaydirma)*SLITSIZE*848 ;			//bitmapler içerisindeki slitlerin yerini hesaplýyor
 		if(clear==1){
 			for (row = slit; row < slit + SLITSIZE; row++) {
 				//alttaki d?ng?y? hizlandirmak icin temp1 ve temp2 icerigini buraya aldim.
