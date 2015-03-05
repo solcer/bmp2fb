@@ -30,7 +30,34 @@
 
 
 
+/*****************GPIO AYARLARI***************************/
+#define PAGE_SIZE (4*1024)
+#define BLOCK_SIZE (4*1024)
 
+#define BCM2708_PERI_BASE        0x20000000
+#define GPIO_BASE                (BCM2708_PERI_BASE + 0x200000) /* GPIO controller */
+ 
+int  mem_fd;
+void *gpio_map;
+ 
+// I/O access
+volatile unsigned *gpio;
+  
+// GPIO setup macros. Always use INP_GPIO(x) before using OUT_GPIO(x) or SET_GPIO_ALT(x,y)
+#define INP_GPIO(g) *(gpio+((g)/10)) &= ~(7<<(((g)%10)*3))
+#define OUT_GPIO(g) *(gpio+((g)/10)) |=  (1<<(((g)%10)*3))
+#define SET_GPIO_ALT(g,a) *(gpio+(((g)/10))) |= (((a)<=3?(a)+4:(a)==4?3:2)<<(((g)%10)*3))
+ 
+#define GPIO_SET *(gpio+7)  // sets   bits which are 1 ignores bits which are 0
+#define GPIO_CLR *(gpio+10) // clears bits which are 1 ignores bits which are 0
+ 
+#define GET_GPIO(g) (*(gpio+13)&(1<<g)) // 0 if LOW, (1<<g) if HIGH
+ 
+#define GPIO_PULL *(gpio+37) // Pull up/pull down
+#define GPIO_PULLCLK0 *(gpio+38) // Pull up/pull down clock
+/*************************************************************/
+
+void setup_io();				//GPIO ayarlari
 unsigned char *load_file(const char *path, size_t *data_size);
 void warning(const char *context, bmp_result code);
 void *bitmap_create(int width, int height, unsigned int state);
@@ -98,6 +125,7 @@ uint8_t *image;
 unsigned char *data[EKRANADEDI];				//resim datas?n? i?eren de?i?ken
 unsigned int projektorSlitNolari[EKRANADEDI];  //=296,284,285,281,277,278,270,264,270,273,249,251,261,264,254,248,255,
 
+uint8_t buffer[100];
 
 
 void handler (int sig){
@@ -134,7 +162,7 @@ int main(int argc, char *argv[])
 
 	long int location = 0;
 	
-	uint8_t buffer[100],outputBuffer[100];
+	uint8_t outputBuffer[100];
 	
 	int cport_nr=22;        /* /dev/ttyAMA0 */
 	int bdrate=115200;       /* 9600 baud */
@@ -149,6 +177,11 @@ int main(int argc, char *argv[])
 	uint16_t sltNo;
 	uint16_t oncekiSltNo[2][EKRANADEDI];			//iki kullanýcý icin degiskeni iki boyutlu yaptým.
 	uint8_t kullaniciNo;
+	
+
+	setup_io();			//io lari hazirla
+	INP_GPIO(CTSCONTROL);		//ikinci pini cikis yapmak icin once giris yapmak gerekli
+	OUT_GPIO(CTSCONTROL);		//pini cikis yap
 	
 	
 	dataOku(&projektorSlitNolari[0],"./pixelData.dat");	
@@ -199,17 +232,18 @@ int main(int argc, char *argv[])
 //	for(i=0;i<EKRANADEDI;i++){
 //		slitDoldur(i,projektorSlitNolari[i],1,SOLGOZRESMI);
 //		slitDoldur(i,projektorSlitNolari[i]+IKIGOZMESAFESI,1,SAGGOZRESMI);
-//	}
+//	} 
 	RS232_flush(cport_nr);			//portta bekleyen datalar? temizle
+	
 	while(1){
 		RS232_PollComport(cport_nr,&buffer[0],15);
-		
-		if(buffer[0] =='U' && buffer[1]=='U')
+		if(buffer[0] =='U' && buffer[1]=='U' )
 		{
+			GPIO_CLR = 1<<CTSCONTROL;	
 			printf("buffer[]= ");
-			 for(i=0;i<15;i++){
-				 printf("%d,",buffer[i]);
-			 }
+			for(i=0;i<15;i++){
+				printf("%d,",buffer[i]);
+			}
 			 printf("\n");	
 			switch(buffer[2]){
 				case COMMANDMANUALCONTROL:
@@ -393,8 +427,10 @@ int main(int argc, char *argv[])
 			}//switch(buffer[2]){
 		}//if(buffer[0] =='U' && buffer[1]=='U')
 		RS232_flush(cport_nr);			//portta bekleyen datalar? temizle
-		for(i=0;i<15;i++)
+		for(i=0;i<15;i++){
 			buffer[i]=0;				//buffer i temizle
+		}
+		GPIO_SET = 1<<CTSCONTROL;					//Pc'ye hazir bilgisi gönder
 	}
 	
 cikis:
@@ -914,3 +950,34 @@ void sendOfsetDataToPc(void)
 		RS232_SendByte(cport_nr,(unsigned char)((dikeyOfsetler[i]&0xff00)>>8));
 	}
 }
+
+void setup_io()
+{
+   /* open /dev/mem */
+   if ((mem_fd = open("/dev/mem", O_RDWR|O_SYNC) ) < 0) {
+      printf("can't open /dev/mem \n");
+      exit(-1);
+   }
+ 
+   /* mmap GPIO */
+   gpio_map = mmap(
+      NULL,             //Any adddress in our space will do
+      BLOCK_SIZE,       //Map length
+      PROT_READ|PROT_WRITE,// Enable reading & writting to mapped memory
+      MAP_SHARED,       //Shared with other processes
+      mem_fd,           //File to map
+      GPIO_BASE         //Offset to GPIO peripheral
+   );
+ 
+   close(mem_fd); //No need to keep mem_fd open after mmap
+ 
+   if (gpio_map == MAP_FAILED) {
+      printf("mmap error %d\n", (int)gpio_map);//errno also set!
+      exit(-1);
+   }
+ 
+   // Always use volatile pointer!
+   gpio = (volatile unsigned *)gpio_map;
+ 
+ 
+} // setup_io

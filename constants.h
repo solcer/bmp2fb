@@ -7,3 +7,5 @@
 
 #define SOLGOZRESMI	0
 #define SAGGOZRESMI 1
+
+#define CTSCONTROL 2			//Uart'in cts hattini kontrol eden io numarasi 
