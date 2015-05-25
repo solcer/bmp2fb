@@ -236,7 +236,9 @@ int main(int argc, char *argv[])
 	RS232_flush(cport_nr);			//portta bekleyen datalar? temizle
 	
 	while(1){
-		RS232_PollComport(cport_nr,&buffer[0],15);
+	
+		//RS232_PollComport(cport_nr,&buffer[0],15);
+		RS232_PollComport(cport_nr,&buffer[0],8);
 		if(buffer[0] =='U' && buffer[1]=='U' )
 		{
 			GPIO_CLR = 1<<CTSCONTROL;	
@@ -264,39 +266,16 @@ int main(int argc, char *argv[])
 					break;
 				case COMMANDMULTIUSERPOSITION:							//coklu kullanici bilgisi
 					//printf("COMMANDPOSITION\n");
-  					firstPersonHeadPositionX=(buffer[4]<<8)&0xff00 | buffer[3];
-					if(firstPersonHeadPositionX>390) firstPersonHeadPositionX=390;
-					kullaniciNo=0;					//pcden gelen kullanici numarasi
-					firstPersonImageNumber=(buffer[6]<<8)&0xff00 | buffer[5];			//elle cevrilen görüntü numarasý
-					firstPersonKaydirma=firstPersonHeadPositionX/20;					//yataydaki görüntü kaydirma
-					if(firstPersonKaydirma>=20) firstPersonKaydirma=20;
-					printf("Head Pos: %d   onceki Slit Pos:%d , yeni sltNo:%d  ,firstPersonImageNumber:%d \n",firstPersonHeadPositionX,oncekiSltNo[kullaniciNo][0], projektorSlitNolari[0]+firstPersonHeadPositionX,firstPersonImageNumber);
-					if(firstPersonImageNumber==0) firstPersonImageNumber= RESIMSAYISI-2;
-					
-					
-					
-					secondPersonHeadPositionX=(buffer[8]<<8)&0xff00 | buffer[7];
-					
+  					secondPersonHeadPositionX=(buffer[4]<<8)&0xff00 | buffer[3];
 					if(secondPersonHeadPositionX>390) secondPersonHeadPositionX=390;
-					
-					secondPersonImageNumber=(buffer[10]<<8)&0xff00 | buffer[9];
-					secondPersonKaydirma=secondPersonHeadPositionX/20;
+					kullaniciNo=0;					//pcden gelen kullanici numarasi
+					secondPersonImageNumber=(buffer[6]<<8)&0xff00 | buffer[5];			//elle cevrilen görüntü numarasý
+					secondPersonKaydirma=secondPersonHeadPositionX/20;					//yataydaki görüntü kaydirma
 					if(secondPersonKaydirma>=20) secondPersonKaydirma=20;
-					secondPersonImageNumber=1;
 					printf("Head Pos: %d   onceki Slit Pos:%d , yeni sltNo:%d  ,secondPersonImageNumber:%d \n",secondPersonHeadPositionX,oncekiSltNo[kullaniciNo][0], projektorSlitNolari[0]+secondPersonHeadPositionX,secondPersonImageNumber);
-					if(secondPersonImageNumber==0) secondPersonImageNumber= RESIMSAYISI-2;
-					
-					
-					
+					if(secondPersonImageNumber==0) secondPersonImageNumber= RESIMSAYISI-2;			
 					
 					for(i=0;i<EKRANADEDI;i++){
-						slitDoldur(i,oncekiSltNo[0][i],0,firstPersonImageNumber);	//1. resimi sil
-						slitDoldur(i,oncekiSltNo[0][i]+IKIGOZMESAFESI,0,firstPersonImageNumber+1);	//2. resimi sil
-						
-						oncekiSltNo[0][i]=projektorSlitNolari[i]+firstPersonHeadPositionX;
-						slitDoldur(i,oncekiSltNo[0][i],1,firstPersonImageNumber);
-						slitDoldur(i,oncekiSltNo[0][i]+IKIGOZMESAFESI,1,firstPersonImageNumber+1);		//2.slitler
-						
 						
 						slitDoldur(i,oncekiSltNo[1][i],0,secondPersonImageNumber);	//1. resimi sil
 						slitDoldur(i,oncekiSltNo[1][i]+IKIGOZMESAFESI,0,secondPersonImageNumber+1);	//2. resimi sil
